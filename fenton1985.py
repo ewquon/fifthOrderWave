@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import sys
 import numpy as np
-import matplotlib.pyplot as plt
 
 #-----------------------
 # hard-coded parameters
@@ -142,6 +141,7 @@ elif output=='umean':
     print umean
 
 elif output=='plot':
+    import matplotlib.pyplot as plt
     plt.plot(x,y)
     xranges=[0,x[-1]]
     plt.xlim(xranges)
