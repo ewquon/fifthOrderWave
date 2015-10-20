@@ -4,13 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #-----------------------
-# INPUTS
+# hard-coded parameters
 g = 9.81 # m/s^2
 d = 4.0     # m, depth
-#H = 0.08    # m, wave height
-##lam = 5.39  # m, wave length
-#T = 1.86    # s, wave period
-#T = 5.66; H = 1.20 #sea state 5
 #-----------------------
 
 output = ''
@@ -96,26 +92,14 @@ except NameError: #wave length not specified
         kdeep = 4*np.pi**2/g/T**2 # deep water approximation, use as a starting guess
         lam_deep = 2*np.pi/kdeep
         def eqn23_L2(k): # TODO: handle mean current speed not 0
-            #print 'evaluating eqn23 for k,d=',k,d
             C0,C2,C4 = evalC(k*d)
             F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
             return F*F
-        #k = minimize_scalar(eqn23) # this will attempt to evaluate the eqn @ k=0 which is undefined
-        #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded')
-        #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-8)
         res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
         if not res.status==0: print res
         k = res.x
         lam = 2*np.pi/k
         Ur = H/d*(lam/d)**2 #Ursell number
-
-        #print '  approximate k:',kdeep
-        #print '  calculated k:',k,' diff [%]:',100*(k-kdeep)/kdeep
-        ##print '  final C0/2/4:', evalC(k*d)
-        #s = '| lambda = %f |' % (lam)
-        #print len(s)*'-'
-        #print s
-        #print len(s)*'-'
 
         if verbose:
             print 'Approximate wave length :',lam_deep,'m  (in deep water)'
@@ -127,7 +111,6 @@ except NameError: #wave length not specified
 
 e = k*H/2 #dimensionless wave height
 
-#x = np.linspace(0,10*d,200)
 x = np.linspace(0,2*lam,200)
 kd = k*d
 
@@ -161,18 +144,15 @@ elif output=='umean':
 elif output=='plot':
     plt.plot(x,y)
     xranges=[0,x[-1]]
-    #plt.plot(xranges,[d,d],'k--')
     plt.xlim(xranges)
     plt.xlabel('x')
     plt.ylabel('free surface height')
     plt.title('lambda=%f m (k=%f 1/m):  T=%f s,  H=%f m'%(lam,k,T,H))
     plt.show()
 
-else:
-    try:
-        if not output=='':
-            with open(output,'w') as f:
-                for xi,yi in zip(x,y):
-                    f.write(' %f %f\n'%(xi,yi))
-            print 'Wrote',output
-    except NameError: pass
+elif not output=='':
+    with open(output,'w') as f:
+        for xi,yi in zip(x,y):
+            f.write(' %f %f\n'%(xi,yi))
+    print 'Wrote',output
+
