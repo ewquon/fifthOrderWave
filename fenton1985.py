@@ -2,35 +2,6 @@
 import sys
 import numpy as np
 
-#-----------------------
-# hard-coded parameters
-g = 9.81 # m/s^2
-d = 4.0     # m, depth
-#-----------------------
-
-output = ''
-verbose = True
-if len(sys.argv) < 3:
-    print 'USAGE: '+sys.argv[0]+' T H [plot|outputFile]'
-    print ''
-    T = 1.86
-    H = 0.08
-    print 'reference sea state:  T=',T,' H=',H
-else:
-    T = float(sys.argv[1])
-    H = float(sys.argv[2])
-if len(sys.argv) > 3: 
-    try:
-        lam = float(sys.argv[3])
-        if len(sys.argv) > 4: output = sys.argv[4]
-    except ValueError:
-        output = sys.argv[3]
-if output=='short' or output[:3]=='lam' or output=='umean': verbose = False
-
-if verbose:
-    print 'Input period            :',T,'s'
-    print 'Input wave height       :',H,'m'
-
 def evalA(kd): #not used# {{{
     A11 = 1./np.sinh(kd)
     A22 = 3.*S**2/(2.*(1.-S)**2)
@@ -80,83 +51,119 @@ def evalD(kd):
     D4 =  np.tanh(kd)**-0.5 * (2. + 4.*S + S**2 + 2.*S**3)/(8.*(1.-S)**3)
     return D2,D4# }}}
 
-# calculate wave number
-try:
-    k = 2*np.pi/lam
-    if verbose: print 'Input wave length       :',lam,'m'
-except NameError: #wave length not specified
+
+###############################################################################
+###############################################################################
+###############################################################################
+
+if __name__ == '__main__':
+
+    #-----------------------
+    # hard-coded parameters
+    g = 9.81 # m/s^2
+    d = 4.0     # m, depth
+    #-----------------------
+    
+    output = ''
+    verbose = True
+    if len(sys.argv) < 3:
+        print 'USAGE: '+sys.argv[0]+' T H [plot|outputFile]'
+        print ''
+        T = 1.86
+        H = 0.08
+        print 'reference sea state:  T=',T,' H=',H
+    else:
+        T = float(sys.argv[1])
+        H = float(sys.argv[2])
+    if len(sys.argv) > 3: 
+        try:
+            lam = float(sys.argv[3])
+            if len(sys.argv) > 4: output = sys.argv[4]
+        except ValueError:
+            output = sys.argv[3]
+    if output=='short' or output[:3]=='lam' or output=='umean': verbose = False
+    
+    if verbose:
+        print 'Input period            :',T,'s'
+        print 'Input wave height       :',H,'m'
+    
+    # calculate wave number
     try:
-        #print '>>> solving for lambda <<<'
-        #from scipy.optimize import minimize_scalar
-        from scipy.optimize import fsolve
-        kdeep = 4*np.pi**2/g/T**2 # deep water approximation, use as a starting guess
-        lam_deep = 2*np.pi/kdeep
-        def eqn23_L2(k): # TODO: handle mean current speed not 0
-            C0,C2,C4 = evalC(k*d)
-            F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
-            #return F*F
-            return F
-        #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
-        #if not res.status==0: print res
-        #k = res.x
-        k = fsolve(eqn23_L2,kdeep)
-        if isinstance(k,np.ndarray): k = k[0]
-        lam = 2*np.pi/k
-        Ur = H/d*(lam/d)**2 #Ursell number
-
-        if verbose:
-            print 'Approximate wave length :',lam_deep,'m  (in deep water)'
-            print 'Calculated wave length  :',lam,'m  (diff=%f%%, Ur=%f)' % \
-                    ( 100*(lam-lam_deep)/lam_deep, Ur )
-
-    except NameError:
-        sys.exit('Need to specify wave number or wave period!')
-
-e = k*H/2 #dimensionless wave height
-
-x = np.linspace(0,2*lam,200)
-kd = k*d
-
-# mean horizontal fluid speed (eqn.13)
-C0,C2,C4 = evalC(kd)
-unorm = C0 + e**2*C2 + e**4*C4
-umean = unorm*(g/k)**0.5
-if verbose: print 'Mean wave speed         :',umean,'m/s'
-
-# free surface profile (eqn.14)
-B22,B31,B42,B44,B53,B55 = evalB(kd)
-kn = kd + e*np.cos(k*x) \
-        + e**2*B22*np.cos(2*k*x) \
-        + e**3*B31*(np.cos(k*x) - np.cos(3*k*x)) \
-        + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
-        + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
-y = kn/k-d
-
-# volume flux under wave (eqn.15)
-#D2,D4 = evalD(kd)
-#Qnorm = unorm*kd + e**2*D2 + e**4*D4
-#print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
-
-if output=='short':
-    print lam, umean
-elif output[:3]=='lam':
-    print lam
-elif output=='umean':
-    print umean
-
-elif output=='plot':
-    import matplotlib.pyplot as plt
-    plt.plot(x,y)
-    xranges=[0,x[-1]]
-    plt.xlim(xranges)
-    plt.xlabel('x')
-    plt.ylabel('free surface height')
-    plt.title('lambda=%f m (k=%f 1/m):  T=%f s,  H=%f m'%(lam,k,T,H))
-    plt.show()
-
-elif not output=='':
-    with open(output,'w') as f:
-        for xi,yi in zip(x,y):
-            f.write(' %f %f\n'%(xi,yi))
-    print 'Wrote',output
-
+        k = 2*np.pi/lam
+        if verbose: print 'Input wave length       :',lam,'m'
+    except NameError: #wave length not specified
+        try:
+            #print '>>> solving for lambda <<<'
+            #from scipy.optimize import minimize_scalar
+            from scipy.optimize import fsolve
+            kdeep = 4*np.pi**2/g/T**2 # deep water approximation, use as a starting guess
+            lam_deep = 2*np.pi/kdeep
+            def eqn23_L2(k): # TODO: handle mean current speed not 0
+                C0,C2,C4 = evalC(k*d)
+                F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
+                #return F*F
+                return F
+            #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
+            #if not res.status==0: print res
+            #k = res.x
+            k = fsolve(eqn23_L2,kdeep)
+            if isinstance(k,np.ndarray): k = k[0]
+            lam = 2*np.pi/k
+            Ur = H/d*(lam/d)**2 #Ursell number
+    
+            if verbose:
+                print 'Approximate wave length :',lam_deep,'m  (in deep water)'
+                print 'Calculated wave length  :',lam,'m  (diff=%f%%, Ur=%f)' % \
+                        ( 100*(lam-lam_deep)/lam_deep, Ur )
+    
+        except NameError:
+            sys.exit('Need to specify wave number or wave period!')
+    
+    e = k*H/2 #dimensionless wave height
+    
+    x = np.linspace(0,2*lam,200)
+    kd = k*d
+    
+    # mean horizontal fluid speed (eqn.13)
+    C0,C2,C4 = evalC(kd)
+    unorm = C0 + e**2*C2 + e**4*C4
+    umean = unorm*(g/k)**0.5
+    if verbose: print 'Mean wave speed         :',umean,'m/s'
+    
+    # free surface profile (eqn.14)
+    B22,B31,B42,B44,B53,B55 = evalB(kd)
+    kn = kd + e*np.cos(k*x) \
+            + e**2*B22*np.cos(2*k*x) \
+            + e**3*B31*(np.cos(k*x) - np.cos(3*k*x)) \
+            + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
+            + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
+    y = kn/k-d
+    
+    # volume flux under wave (eqn.15)
+    #D2,D4 = evalD(kd)
+    #Qnorm = unorm*kd + e**2*D2 + e**4*D4
+    #print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
+    
+    if output=='short':
+        print lam, umean
+    elif output[:3]=='lam':
+        print lam
+    elif output=='umean':
+        print umean
+    
+    elif output=='plot':
+        import matplotlib.pyplot as plt
+        plt.plot(x,y)
+        xranges=[0,x[-1]]
+        plt.xlim(xranges)
+        plt.xlabel('x')
+        plt.ylabel('free surface height')
+        plt.title('lambda=%f m (k=%f 1/m):  T=%f s,  H=%f m'%(lam,k,T,H))
+        plt.show()
+    
+    elif not output=='':
+        with open(output,'w') as f:
+            for xi,yi in zip(x,y):
+                f.write(' %f %f\n'%(xi,yi))
+        print 'Wrote',output
+    
