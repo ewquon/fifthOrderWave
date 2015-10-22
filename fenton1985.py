@@ -99,7 +99,8 @@ except NameError: #wave length not specified
         #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
         #if not res.status==0: print res
         #k = res.x
-        k = fsolve(eqn23_L2,kdeep)[0]
+        k = fsolve(eqn23_L2,kdeep)
+        if isinstance(k,np.ndarray): k = k[0]
         lam = 2*np.pi/k
         Ur = H/d*(lam/d)**2 #Ursell number
 
