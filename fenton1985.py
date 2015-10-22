@@ -94,7 +94,8 @@ except NameError: #wave length not specified
         def eqn23_L2(k): # TODO: handle mean current speed not 0
             C0,C2,C4 = evalC(k*d)
             F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
-            return F*F
+            #return F*F
+            return F
         #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
         #if not res.status==0: print res
         #k = res.x
