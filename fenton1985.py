@@ -87,16 +87,18 @@ try:
 except NameError: #wave length not specified
     try:
         #print '>>> solving for lambda <<<'
-        from scipy.optimize import minimize_scalar
+        #from scipy.optimize import minimize_scalar
+        from scipy.optimize import fsolve
         kdeep = 4*np.pi**2/g/T**2 # deep water approximation, use as a starting guess
         lam_deep = 2*np.pi/kdeep
         def eqn23_L2(k): # TODO: handle mean current speed not 0
             C0,C2,C4 = evalC(k*d)
             F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
             return F*F
-        res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
-        if not res.status==0: print res
-        k = res.x
+        #res = minimize_scalar(eqn23_L2,bounds=(1e-8,2*kdeep),method='bounded',tol=1e-16)
+        #if not res.status==0: print res
+        #k = res.x
+        k = fsolve(eqn23_L2,kdeep)[0]
         lam = 2*np.pi/k
         Ur = H/d*(lam/d)**2 #Ursell number
 
