@@ -5,7 +5,7 @@ import numpy as np
 #from scipy.optimize import fsolve
 from fenton1985 import *
 from scipy import interpolate
-from scipy.optimize import minimize_scalar
+from scipy.optimize import minimize_scalar, fsolve
 
 import matplotlib.pyplot as plt
 
@@ -105,16 +105,16 @@ def readCsv(fname,N=-1): # assume 1 header line
 #
 # process all csv files
 #
-first = True
 times = times[indices]
 t0 = times[0]
 err = np.zeros((Ntimes))
-for i in range(Ntimes):
-    idx = indices[i]
-    t = times[i]
+lam = np.zeros((Ntimes))
+for itime in range(Ntimes):
+    idx = indices[itime]
+    t = times[itime]
     fname = csvfiles[idx]
 
-    if first: #first read
+    if itime==0: #first read
 
         if verbose: print 'Processing',fname,'as first file'
         x,y = readCsv(fname)
@@ -135,8 +135,6 @@ for i in range(Ntimes):
         if not result.success: print 'WARNING: optimizer did not converge'
         xoff0 = result.x
             
-        first = False
-
     else:
 
         if verbose: print 'Processing',fname
@@ -146,20 +144,35 @@ for i in range(Ntimes):
 
     yref = surf(xoff0+U*(t-t0))
     e = fint(xref) - yref
-    err[i] = e.dot(e)**0.5
+    err[itime] = e.dot(e)**0.5
 
-    # dev: plot current and reference solutions
+    #
+    # estimate wavelength
+    #
+    guesses = []
+    for i in range(1,len(y)-1):
+        if y[i-1]*y[i+1] < 0: guesses.append(x[i])
+    zeroes = []
+    for guess in guesses:
+        new0 = fsolve(fint,guess)
+        if isinstance(new0,np.ndarray): new0 = new0[0]
+        if not new0 in zeroes: zeroes.append(new0)
+    lam[itime] = 2*np.mean(np.diff(np.array(zeroes)))
+    #print lam[itime],zeroes
+
+    # plot current and reference solutions
     if makeplots:
         plt.clf()
-        plt.plot(xref,yref,'k--',linewidth=3)
+        plt.plot(xref,yref,'k:',linewidth=3)
         plt.plot(x,y,'b')
+        
         if saveplots=='': plt.show()
         else: 
             plt.ylim((-0.55*H,0.55*H))
             plt.xlabel('x')
             plt.ylabel('z')
             plt.title('wave surface')
-            fname = saveplots+'_%04d.png'%(i)
+            fname = saveplots+'_%04d.png'%(itime)
             plt.savefig(fname)
             print 'Wrote',fname
 
@@ -169,15 +182,35 @@ for i in range(Ntimes):
 #print err
 if not errFile=='':
     with open(errFile,'w') as f:
-        for t,e in zip(times,err):
-            f.write(' %f %g\n' % (t,e) )
+        f.write(' t error wavelength\n')
+        for t,e,l in zip(times,err,lam):
+            f.write(' %f %g %f' % (t,e,l) )
+            f.write('\n')
     print 'Wrote',errFile
-
 print '  max error:',err.max()
 print '  cumulative error:',err.sum()
 
+# wavelength error
+coefs = np.polyfit(times,lam,3)
+p = np.poly1d(coefs)
+lam_final = p(times[-1])
+print '  final wavelength:',lam_final
+print '  wavelength error:',100*(lam_final-L)/L,'%'
+
+# scale the wave profile to get a more realistic estimate 
+# of the wave amplitude error
+fint = interpolate.interp1d(L/lam_final*x,y)
+yscaled = fint(xref)
+e = yscaled - yref
+print '  final wavelength-corrected error:', e.dot(e)**0.5
+
 if makeplots:
-    plt.clf()
+    plt.plot(xref,yscaled,'r--')
+    plt.show()
+
+    plt.figure()
     plt.semilogy(times,err)
+    plt.xlabel('time')
+    plt.ylabel('||error||')
     plt.show()
 
