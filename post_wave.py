@@ -10,11 +10,16 @@ from scipy.optimize import minimize_scalar
 import matplotlib.pyplot as plt
 
 periodsToCompare = 4
+Nref = periodsToCompare*100
 macro = 'setupSim.java'
 surfDir = 'waterSurface'
-Nref = periodsToCompare*100
-makeplots = False
+errFile = 'errors.dat'
+
 g = 9.81    # gravity
+
+makeplots = True
+saveplots = 'error'
+verbose = False
 
 #
 # read parameters from macro
@@ -111,7 +116,7 @@ for i in range(Ntimes):
 
     if first: #first read
 
-        print 'Processing',fname,'as first file'
+        if verbose: print 'Processing',fname,'as first file'
         x,y = readCsv(fname)
 
         #
@@ -125,15 +130,16 @@ for i in range(Ntimes):
             e = yint - yref
             return e.dot(e) #L2 error
         result = minimize_scalar(diff,bounds=(0,x[-1]-xref[-1]),method='bounded')
-        print 'Calculating offset with optimizer'
-        print result
+        if verbose: print 'Calculating offset with optimizer'
+        if verbose: print result
+        if not result.success: print 'WARNING: optimizer did not converge'
         xoff0 = result.x
             
         first = False
 
     else:
 
-        print 'Processing',fname
+        if verbose: print 'Processing',fname
         x,y = readCsv(fname)
         x -= x[0]
         fint = interpolate.interp1d(x,y)
@@ -144,21 +150,34 @@ for i in range(Ntimes):
 
     # dev: plot current and reference solutions
     if makeplots:
+        plt.clf()
         plt.plot(xref,yref,'k--',linewidth=3)
         plt.plot(x,y,'b')
-        plt.show()
+        if saveplots=='': plt.show()
+        else: 
+            plt.ylim((-0.55*H,0.55*H))
+            plt.xlabel('x')
+            plt.ylabel('z')
+            plt.title('wave surface')
+            fname = saveplots+'_%04d.png'%(i)
+            plt.savefig(fname)
+            print 'Wrote',fname
 
 #
 # print final results
 #
 #print err
-with open('errors.dat','w') as f:
-    for t,e in zip(times,err):
-        f.write(' %f %g\n' % (t,e) )
-print 'max error:',err.max()
-print 'cumulative error:',err.sum()
+if not errFile=='':
+    with open(errFile,'w') as f:
+        for t,e in zip(times,err):
+            f.write(' %f %g\n' % (t,e) )
+    print 'Wrote',errFile
+
+print '  max error:',err.max()
+print '  cumulative error:',err.sum()
 
 if makeplots:
+    plt.clf()
     plt.semilogy(times,err)
     plt.show()
 
