@@ -2,10 +2,9 @@
 import sys
 import os
 import numpy as np
-#from scipy.optimize import fsolve
 from fenton1985 import *
 from scipy import interpolate
-from scipy.optimize import minimize_scalar, fsolve
+from scipy.optimize import fsolve
 
 import matplotlib.pyplot as plt
 
@@ -124,16 +123,45 @@ for itime in range(Ntimes):
         #
         x -= x[0]
         fint = interpolate.interp1d(x,y)
-        def diff(xoff):
-            xint = np.linspace(xref[0]+xoff,xref[-1]+xoff,Nref)
-            yint = fint(xint)
-            e = yint - yref
-            return e.dot(e) #L2 error
-        result = minimize_scalar(diff,bounds=(0,x[-1]-xref[-1]),method='bounded')
-        if verbose: print 'Calculating offset with optimizer'
-        if verbose: print result
-        if not result.success: print 'WARNING: optimizer did not converge'
-        xoff0 = result.x
+        #if verbose: print 'Calculating offset with optimizer'
+        #def diff(xoff):
+        #    xint = np.linspace(xref[0]+xoff,xref[-1]+xoff,Nref)
+        #    yint = fint(xint)
+        #    e = yint - yref
+        #    return e.dot(e) #L2 error
+        #result = minimize_scalar(diff,bounds=(0,x[-1]-xref[-1]),method='bounded')
+        #if verbose: print result
+        #if not result.success: print 'WARNING: optimizer did not converge'
+        #xoff0 = result.x
+        #print 'x[0],y[0],xoffset',x[0],y[0],xoff0
+
+        def inlet(xoff):
+            kn = knorm*np.cos(k*(-xoff)) \
+                + knorm**2*B22*np.cos(2*k*(-xoff)) \
+                + knorm**3*B31*(np.cos(k*(-xoff)) - np.cos(3*k*(-xoff))) \
+                + knorm**4*(B42*np.cos(2*k*(-xoff)) + B44*np.cos(4*k*(-xoff))) \
+                + knorm**5*( \
+                    -(B53+B55)*np.cos(k*(-xoff)) \
+                    + B53*np.cos(3*k*(-xoff)) \
+                    + B55*np.cos(5*k*(-xoff)) \
+                    )
+            return kn/k - y[0]
+        def inletSlope(xoff):
+            ytmp = surf(xoff)
+            return (ytmp[1]-ytmp[0])/(xref[1]-xref[0])
+        guess = -L/2
+        xoff0 = fsolve(inlet,guess)
+        if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+        while xoff0 < 0:
+            guess += L/2
+            xoff0 = fsolve(inlet,guess)
+            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+        print 'initial offset:',xoff0
+        if inletSlope(xoff0) * (y[1]-y[0]) < 0: #different slope
+            print '  first guess has wrong slope',inletSlope(xoff0),y[0],y[1]
+            xoff0 = fsolve(inlet,xoff0 + L/2)
+            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+            print '  updated offset:',xoff0,inletSlope(xoff0)
             
     else:
 
