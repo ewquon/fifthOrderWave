@@ -17,8 +17,12 @@ errFile = 'errors.dat'
 g = 9.81    # gravity
 
 makeplots = True
-saveplots = 'error'
+showplots = False
+saveplots = '' #'error'
+savefinal = True
 verbose = False
+
+if len(sys.argv) > 1: saveplots = sys.argv[1]
 
 #
 # read parameters from macro
@@ -172,7 +176,7 @@ for itime in range(Ntimes):
 
     yref = surf(xoff0+U*(t-t0))
     e = fint(xref) - yref
-    err[itime] = e.dot(e)**0.5
+    err[itime] = np.dot(e,e)**0.5
 
     #
     # estimate wavelength
@@ -190,12 +194,12 @@ for itime in range(Ntimes):
 
     # plot current and reference solutions
     if makeplots:
-        plt.clf()
-        plt.plot(xref,yref,'k:',linewidth=3)
-        plt.plot(x,y,'b')
+        if saveplots or (savefinal and itime==Ntimes-1):
+            plt.clf()
+            plt.plot(xref,yref,'k:',linewidth=3)
+            plt.plot(x,y,'b')
         
-        if saveplots=='': plt.show()
-        else: 
+        if saveplots: #not saveplots==''
             plt.ylim((-0.55*H,0.55*H))
             plt.xlabel('x')
             plt.ylabel('z')
@@ -203,6 +207,7 @@ for itime in range(Ntimes):
             fname = saveplots+'_%04d.png'%(itime)
             plt.savefig(fname)
             print 'Wrote',fname
+        elif showplots: plt.show()
 
 #
 # print final results
@@ -223,22 +228,29 @@ coefs = np.polyfit(times,lam,3)
 p = np.poly1d(coefs)
 lam_final = p(times[-1])
 print '  final wavelength:',lam_final
-print '  wavelength error:',100*(lam_final-L)/L,'%'
+print '  wavelength error:',(lam_final-L)/L#*100,'%'
 
 # scale the wave profile to get a more realistic estimate 
 # of the wave amplitude error
 fint = interpolate.interp1d(L/lam_final*x,y)
 yscaled = fint(xref)
 e = yscaled - yref
-print '  final wavelength-corrected error:', e.dot(e)**0.5
+print '  final wavelength-corrected error:', np.dot(e,e)**0.5
 
 if makeplots:
     plt.plot(xref,yscaled,'r--')
-    plt.show()
+    plt.title('T=%.2f s, H=%.2f m, lam=%f m (nH=%d,nL=%d,cfl=%.4f)' \
+            % (T,H,L,nH,nL,cfl) )
+    plt.legend(['theory','simulation','sim, corrected'],loc='best')
+    plt.xlabel('x')
+    plt.ylabel('z')
+    if showplots: plt.show()
+    if savefinal: plt.savefig('final_alpha.png')
 
     plt.figure()
     plt.semilogy(times,err)
     plt.xlabel('time')
     plt.ylabel('||error||')
-    plt.show()
+    if showplots: plt.show()
+    if savefinal: plt.savefig('final_error.png')
 
