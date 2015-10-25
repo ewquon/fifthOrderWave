@@ -21,6 +21,9 @@ showplots = False
 saveplots = '' #'error'
 savefinal = True
 verbose = False
+timing = False
+
+if timing: import time
 
 if len(sys.argv) > 1: saveplots = sys.argv[1]
 
@@ -29,8 +32,10 @@ if len(sys.argv) > 1: saveplots = sys.argv[1]
 #
 vartypes = ['double','int']
 print 'Reading variables of type',vartypes,'from',macro,':'
+if timing: tlast = time.time()
 with open(macro, 'r') as f:
     for line in f:
+        if 'execute()' in line: break
         line = line.strip()
         for vartype in vartypes:
             if line.startswith(vartype) and '=' in line:
@@ -43,10 +48,12 @@ with open(macro, 'r') as f:
 #print 'Calculated lambda =',lam
 k = 2*np.pi/L
 kd = k * d
+if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
 
 #
 # setup surface definition
 #
+if timing: print 'setup surf def'
 xref = np.linspace(0,periodsToCompare*L,Nref)
 B22,B31,B42,B44,B53,B55 = evalB(kd)
 knorm = k*H/2
@@ -62,19 +69,23 @@ def surf(xoff=0):
             )
     return kn/k
 yref = surf()
+if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
 
 #
 # find csv files
 #
+if timing: print 'finding csv files'
 csvfiles = []
 for f in os.listdir(surfDir):
     if f.endswith(".csv"):
         csvfiles.append(surfDir+os.sep+f)
 #print csvfiles
+if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
 
 #
 # sort csv files
 #
+if timing: print 'sorting csv files'
 Ntimes = len(csvfiles)
 times = np.zeros((Ntimes))
 i = -1
@@ -84,6 +95,7 @@ for csv in csvfiles:
     i += 1
     times[i] = float(t)
 indices = [ i[0] for i in sorted(enumerate(times), key=lambda x:x[1]) ]
+if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
 
 #
 # define csv reader
@@ -108,6 +120,7 @@ def readCsv(fname,N=-1): # assume 1 header line
 #
 # process all csv files
 #
+if timing: print 'processing csv files'
 times = times[indices]
 t0 = times[0]
 err = np.zeros((Ntimes))
