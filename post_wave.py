@@ -16,7 +16,9 @@ errFile = 'post.dat'
 
 g = 9.81    # gravity
 TOL = 1e-8  # tolerance for checking fsolve actually is getting to F(x)=0
-NSMOO = 25  # smoothing for zero-finding, don't need to preserve amplitude
+NSMOO = 10  # smoothing for zero-finding, don't need to preserve amplitude
+            # NOTE: if too large, can cause errors in numerical beach and/or
+            #       in regions with large fluctuations
 
 makeplots = True
 showplots = False
