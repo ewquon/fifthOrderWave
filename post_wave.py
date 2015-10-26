@@ -48,9 +48,6 @@ with open(macro, 'r') as f:
                 print ' ',line
                 exec(line)
 
-#k = calculateWavenumber(g,T,H,d)
-#lam = 2*np.pi/k
-#print 'Calculated lambda =',lam
 k = 2*np.pi/L
 kd = k * d
 if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
@@ -84,7 +81,6 @@ csvfiles = []
 for f in os.listdir(surfDir):
     if f.endswith(".csv"):
         csvfiles.append(surfDir+os.sep+f)
-#print csvfiles
 if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
 
 #
@@ -96,7 +92,6 @@ times = np.zeros((Ntimes))
 i = -1
 for csv in csvfiles:
     t = csv[:-4].split('_')[-1]
-    #print t
     i += 1
     times[i] = float(t)
 indices = [ i[0] for i in sorted(enumerate(times), key=lambda x:x[1]) ]
@@ -145,18 +140,6 @@ for itime in range(Ntimes):
         #
         # find the offset at (near) t=0
         #
-        #if verbose: print 'Calculating offset with optimizer'
-        #def diff(xoff):
-        #    xint = np.linspace(xref[0]+xoff,xref[-1]+xoff,Nref)
-        #    yint = fint(xint)
-        #    e = yint - yref
-        #    return e.dot(e) #L2 error
-        #result = minimize_scalar(diff,bounds=(0,x[-1]-xref[-1]),method='bounded')
-        #if verbose: print result
-        #if not result.success: print 'WARNING: optimizer did not converge'
-        #xoff0 = result.x
-        #print 'x[0],y[0],xoffset',x[0],y[0],xoff0
-
         def inlet(xoff): # ==surf(xref=0)
             kn = knorm*np.cos(k*(-xoff)) \
                 + knorm**2*B22*np.cos(2*k*(-xoff)) \
@@ -171,8 +154,7 @@ for itime in range(Ntimes):
         def inletSlope(xoff):
             ytmp = surf(xoff)
             return (ytmp[1]-ytmp[0])/(xref[1]-xref[0])
-        #guess = -L/2
-        guess = 0
+        guess = 0 #-L/2
         xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
         #print info
         if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
@@ -185,11 +167,6 @@ for itime in range(Ntimes):
             if verbose: print '  guess:',guess,' xoff,slope=',xoff0,inletSlope(xoff0)
             if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
         print 'initial offset:',xoff0
-#        if inletSlope(xoff0) * (y[1]-y[0]) < 0: #different slope
-#            print '  first guess has wrong slope',inletSlope(xoff0),y[0],y[1]
-#            xoff0 = fsolve(inlet,xoff0 + L/2)
-#            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-#            print '  updated offset:',xoff0,inletSlope(xoff0)
             
     else:
 
@@ -223,22 +200,7 @@ for itime in range(Ntimes):
         if len(guesses) >= 2*periodsToCompare: break
     guesses = np.array(guesses)
     lam[itime] = 2*np.mean(np.diff(guesses))
-#    zeroes = []
-#    for guess in guesses:
-#        #new0 = fsolve(fint,guess)
-#        #print '  guess:',guess
-#        #print '  zero crossing:',new0
-#        #if isinstance(new0,np.ndarray): new0 = new0[0]
-#        #if not new0 in zeroes: zeroes.append(new0)
-#        try:
-#            new0,info,istat,msg = fsolve(fint,guess,full_output=True)
-#        except: continue #outside interpolation range
-#        if np.abs(info['fvec'][0]) < TOL:
-#            if isinstance(new0,np.ndarray): new0 = new0[0]
-#            if not new0 in zeroes: zeroes.append(new0)
-#    assert(len(zeroes) > 0)
-#    lam[itime] = 2*np.mean(np.diff(np.array(zeroes)))
-    #print lam[itime],zeroes
+
     if checksmooth:
         print guesses
         print lam[itime]
@@ -272,7 +234,6 @@ for itime in range(Ntimes):
 #
 # print final results
 #
-#print err
 if not errFile=='':
     with open(errFile,'w') as f:
         f.write(' t error wavelength\n')
