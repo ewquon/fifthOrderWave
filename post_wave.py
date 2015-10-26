@@ -12,7 +12,7 @@ periodsToCompare = 4
 Nref = periodsToCompare*100
 macro = 'setupSim.java'
 surfDir = 'waterSurface'
-errFile = 'errors.dat'
+errFile = 'post.dat'
 
 g = 9.81    # gravity
 TOL = 1e-8  # tolerance for checking fsolve actually is getting to F(x)=0
@@ -236,7 +236,7 @@ for itime in range(Ntimes):
 #
 if not errFile=='':
     with open(errFile,'w') as f:
-        f.write(' t error wavelength\n')
+        f.write(' t max_error wavelength\n')
         for t,e,l in zip(times,err,lam):
             f.write(' %f %g %f' % (t,e,l) )
             f.write('\n')
@@ -267,7 +267,7 @@ if makeplots:
     plt.xlabel('x')
     plt.ylabel('z')
     if showplots: plt.show()
-    if savefinal: plt.savefig('final_alpha.png')
+    if savefinal: plt.savefig('final_surf.png')
 
     plt.figure()
     plt.semilogy(times,err)
