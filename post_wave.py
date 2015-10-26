@@ -15,6 +15,7 @@ surfDir = 'waterSurface'
 errFile = 'errors.dat'
 
 g = 9.81    # gravity
+TOL = 1e-8
 
 makeplots = True
 showplots = False
@@ -134,12 +135,12 @@ for itime in range(Ntimes):
 
         if verbose: print 'Processing',fname,'as first file'
         x,y = readCsv(fname)
+        x -= x[0]
+        #fint = interpolate.interp1d(x,y)
 
         #
         # find the offset at (near) t=0
         #
-        x -= x[0]
-        fint = interpolate.interp1d(x,y)
         #if verbose: print 'Calculating offset with optimizer'
         #def diff(xoff):
         #    xint = np.linspace(xref[0]+xoff,xref[-1]+xoff,Nref)
@@ -152,7 +153,7 @@ for itime in range(Ntimes):
         #xoff0 = result.x
         #print 'x[0],y[0],xoffset',x[0],y[0],xoff0
 
-        def inlet(xoff):
+        def inlet(xoff): # ==surf(xref=0)
             kn = knorm*np.cos(k*(-xoff)) \
                 + knorm**2*B22*np.cos(2*k*(-xoff)) \
                 + knorm**3*B31*(np.cos(k*(-xoff)) - np.cos(3*k*(-xoff))) \
@@ -166,29 +167,37 @@ for itime in range(Ntimes):
         def inletSlope(xoff):
             ytmp = surf(xoff)
             return (ytmp[1]-ytmp[0])/(xref[1]-xref[0])
-        guess = -L/2
-        xoff0 = fsolve(inlet,guess)
+        #guess = -L/2
+        guess = 0
+        xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
+        #print info
         if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-        while xoff0 < 0:
-            guess += L/2
-            xoff0 = fsolve(inlet,guess)
+        if verbose: print 'initial offset:',xoff0
+        while xoff0 < 0 or \
+                (not np.sign(inletSlope(xoff0)) == np.sign(y[1]-y[0])) or \
+                np.abs(info['fvec'][0]) > TOL:
+            guess += L/4
+            xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
+            #print info
+            if verbose: print '  guess:',guess,' xoff,slope=',xoff0,inletSlope(xoff0)
             if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-        print 'initial offset:',xoff0
-        if inletSlope(xoff0) * (y[1]-y[0]) < 0: #different slope
-            print '  first guess has wrong slope',inletSlope(xoff0),y[0],y[1]
-            xoff0 = fsolve(inlet,xoff0 + L/2)
-            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-            print '  updated offset:',xoff0,inletSlope(xoff0)
+#        print 'initial offset:',xoff0
+#        if inletSlope(xoff0) * (y[1]-y[0]) < 0: #different slope
+#            print '  first guess has wrong slope',inletSlope(xoff0),y[0],y[1]
+#            xoff0 = fsolve(inlet,xoff0 + L/2)
+#            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+#            print '  updated offset:',xoff0,inletSlope(xoff0)
             
     else:
 
         if verbose: print 'Processing',fname
         x,y = readCsv(fname)
         x -= x[0]
-        fint = interpolate.interp1d(x,y)
+        #fint = interpolate.interp1d(x,y)
 
     yref = surf(xoff0+U*(t-t0))
-    e = fint(xref) - yref
+    #e = fint(xref) - yref
+    e = np.interp(xref,x,y) - yref
     err[itime] = np.dot(e,e)**0.5
 
     #
@@ -197,15 +206,28 @@ for itime in range(Ntimes):
     guesses = []
     for i in range(1,len(y)-1):
         if y[i-1]*y[i+1] < 0: guesses.append(x[i])
-    zeroes = []
-    for guess in guesses:
-        new0 = fsolve(fint,guess)
-        if isinstance(new0,np.ndarray): new0 = new0[0]
-        if not new0 in zeroes: zeroes.append(new0)
-    lam[itime] = 2*np.mean(np.diff(np.array(zeroes)))
+    #print guesses
+    lam[itime] = 2*np.mean(np.diff(np.array(guesses)))
+#    zeroes = []
+#    for guess in guesses:
+#        #new0 = fsolve(fint,guess)
+#        #print '  guess:',guess
+#        #print '  zero crossing:',new0
+#        #if isinstance(new0,np.ndarray): new0 = new0[0]
+#        #if not new0 in zeroes: zeroes.append(new0)
+#        try:
+#            new0,info,istat,msg = fsolve(fint,guess,full_output=True)
+#        except: continue #outside interpolation range
+#        if np.abs(info['fvec'][0]) < TOL:
+#            if isinstance(new0,np.ndarray): new0 = new0[0]
+#            if not new0 in zeroes: zeroes.append(new0)
+#    assert(len(zeroes) > 0)
+#    lam[itime] = 2*np.mean(np.diff(np.array(zeroes)))
     #print lam[itime],zeroes
 
+    #
     # plot current and reference solutions
+    #
     if makeplots:
         if saveplots or (savefinal and itime==Ntimes-1):
             plt.clf()
@@ -222,6 +244,8 @@ for itime in range(Ntimes):
             print 'Wrote',fname
         elif showplots: plt.show()
 
+# end of time loop
+
 #
 # print final results
 #
@@ -233,6 +257,7 @@ if not errFile=='':
             f.write(' %f %g %f' % (t,e,l) )
             f.write('\n')
     print 'Wrote',errFile
+
 print '  max error:',err.max()
 print '  cumulative error:',err.sum()
 

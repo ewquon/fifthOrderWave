@@ -160,7 +160,7 @@ if __name__ == '__main__':
     elif output=='plot':
         import matplotlib.pyplot as plt
         plt.plot(x,y)
-        xranges=[0,x[-1]]
+        xranges=[x[0],x[-1]]
         plt.xlim(xranges)
         plt.xlabel('x')
         plt.ylabel('free surface height')
