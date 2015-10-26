@@ -176,7 +176,6 @@ for itime in range(Ntimes):
         xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
         #print info
         if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-        if verbose: print 'initial offset:',xoff0
         while xoff0 < 0 or \
                 (not np.sign(inletSlope(xoff0)) == np.sign(y[1]-y[0])) or \
                 np.abs(info['fvec'][0]) > TOL:
@@ -185,7 +184,7 @@ for itime in range(Ntimes):
             #print info
             if verbose: print '  guess:',guess,' xoff,slope=',xoff0,inletSlope(xoff0)
             if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-#        print 'initial offset:',xoff0
+        print 'initial offset:',xoff0
 #        if inletSlope(xoff0) * (y[1]-y[0]) < 0: #different slope
 #            print '  first guess has wrong slope',inletSlope(xoff0),y[0],y[1]
 #            xoff0 = fsolve(inlet,xoff0 + L/2)
@@ -221,6 +220,7 @@ for itime in range(Ntimes):
         if not np.sign(ysmoo[i])==np.sign(ysmoo[i+1]): 
             x0 = x[i] - ysmoo[i]*(x[i+1]-x[i])/(ysmoo[i+1]-ysmoo[i])
             guesses.append(x0)
+        if len(guesses) >= 2*periodsToCompare: break
     guesses = np.array(guesses)
     lam[itime] = 2*np.mean(np.diff(guesses))
 #    zeroes = []
