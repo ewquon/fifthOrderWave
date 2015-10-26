@@ -15,14 +15,18 @@ surfDir = 'waterSurface'
 errFile = 'errors.dat'
 
 g = 9.81    # gravity
-TOL = 1e-8
+TOL = 1e-8  # tolerance for checking fsolve actually is getting to F(x)=0
+NSMOO = 25  # smoothing for zero-finding, don't need to preserve amplitude
 
 makeplots = True
 showplots = False
 saveplots = '' #'error'
 savefinal = True
+
+# DEBUG:
 verbose = False
 timing = False
+checksmooth = False
 
 if timing: import time
 
@@ -203,11 +207,22 @@ for itime in range(Ntimes):
     #
     # estimate wavelength
     #
+    # - first smooth signal
+    N = len(y)
+    ysmoo = np.zeros((N))
+    for i in range(N):
+        ist = max(0,i-NSMOO)
+        ind = min(N,i+NSMOO)
+        ysmoo[i] = np.mean(y[ist:ind])
+    # - then check for zero crossings
     guesses = []
-    for i in range(1,len(y)-1):
-        if y[i-1]*y[i+1] < 0: guesses.append(x[i])
-    #print guesses
-    lam[itime] = 2*np.mean(np.diff(np.array(guesses)))
+    for i in range(0,len(y)-1):
+        #if y[i-1]*y[i+1] < 0: guesses.append(x[i])
+        if not np.sign(ysmoo[i])==np.sign(ysmoo[i+1]): 
+            x0 = x[i] - ysmoo[i]*(x[i+1]-x[i])/(ysmoo[i+1]-ysmoo[i])
+            guesses.append(x0)
+    guesses = np.array(guesses)
+    lam[itime] = 2*np.mean(np.diff(guesses))
 #    zeroes = []
 #    for guess in guesses:
 #        #new0 = fsolve(fint,guess)
@@ -224,6 +239,13 @@ for itime in range(Ntimes):
 #    assert(len(zeroes) > 0)
 #    lam[itime] = 2*np.mean(np.diff(np.array(zeroes)))
     #print lam[itime],zeroes
+    if checksmooth:
+        print guesses
+        print lam[itime]
+        plt.plot(x,y,'ko')
+        plt.plot(x,ysmoo,'b-')
+        plt.plot(guesses,np.zeros(len(guesses)),'rx')
+        plt.show()
 
     #
     # plot current and reference solutions
@@ -231,8 +253,9 @@ for itime in range(Ntimes):
     if makeplots:
         if saveplots or (savefinal and itime==Ntimes-1):
             plt.clf()
-            plt.plot(xref,yref,'k:',linewidth=3)
-            plt.plot(x,y,'b')
+            plt.plot(xref,yref,'k:',linewidth=3,label='theory')
+            plt.plot(x,y,'b',label='simulation')
+            plt.plot(guesses,np.zeros(len(guesses)),'bo')
         
         if saveplots: #not saveplots==''
             plt.ylim((-0.55*H,0.55*H))
@@ -276,10 +299,10 @@ e = yscaled - yref
 print '  final wavelength-corrected error:', np.dot(e,e)**0.5
 
 if makeplots:
-    plt.plot(xref,yscaled,'r--')
+    plt.plot(xref,yscaled,'r--',label='sim, corrected')
     plt.title('T=%.2f s, H=%.2f m, lam=%f m (nH=%d,nL=%d,cfl=%.4f)' \
             % (T,H,L,nH,nL,cfl) )
-    plt.legend(['theory','simulation','sim, corrected'],loc='best')
+    plt.legend(loc='best')
     plt.xlabel('x')
     plt.ylabel('z')
     if showplots: plt.show()
