@@ -28,7 +28,7 @@ savefinal = True
 # DEBUG:
 verbose = False
 timing = False
-checksmooth = False
+checksurfplot = False
 
 if timing: import time
 
@@ -177,6 +177,42 @@ for itime in range(Ntimes):
         x -= x[0]
         #fint = interpolate.interp1d(x,y)
 
+    # check for distinct x
+    ux = set(x)
+    if not len(ux)==len(x): # interp can return NaN
+        N = len(ux)
+        ynew = np.zeros((N))
+        print 't=',t,': correcting non-distinct x values',len(x),'to',len(ux)
+        i = -1
+        ysum = 0
+        dup = 0
+        for i0 in range(len(x)-1):
+            if not x[i0+1]==x[i0]:
+                i += 1
+                #print i0,i,x[i0],y[i0]
+                if ysum==0:
+                    ynew[i] = y[i0]
+                else:
+                    ynew[i] = (ysum+y[i0])/(dup+1.0)
+                    #print ysum+y[i0],dup+1,'AVG',ynew[i]
+                    ysum = 0
+                    dup = 0
+            else: # average this value
+                ysum += y[i0]
+                dup += 1
+                #print i0,i,x[i0],y[i0],'DUP',ysum,dup
+        i0 += 1
+        i += 1
+        assert( i==N-1 )
+        #print i0,i,x[i0],y[i0]
+        if ysum==0:
+            ynew[i] = y[i0]
+        else:
+            ynew[i] = (ysum+y[i0])/(dup+1.0)
+            #print ysum+y[i0],dup+1,'AVG',ynew[i]
+        x = np.array(list(ux))
+        y = ynew
+
     yref = surf(xoff0+U*(t-t0))
     #e = fint(xref) - yref
     e = np.interp(xref,x,y) - yref
@@ -203,9 +239,9 @@ for itime in range(Ntimes):
     guesses = np.array(guesses)
     lam[itime] = 2*np.mean(np.diff(guesses))
 
-    if checksmooth:
+    if checksurfplot:
         print guesses
-        print lam[itime]
+        print 't,lambda',t,lam[itime]
         plt.plot(x,y,'ko')
         plt.plot(x,ysmoo,'b-')
         plt.plot(guesses,np.zeros(len(guesses)),'rx')
