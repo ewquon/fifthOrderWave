@@ -169,6 +169,8 @@ if __name__ == '__main__':
             + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
             + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
     y = kn/k-d
+    print 'Crest/trough height     :',np.max(y),np.min(y),'m'
+
     
     if output=='plot':
         import matplotlib.pyplot as plt
