@@ -105,8 +105,8 @@ if __name__ == '__main__':
             (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
     
     if verbose:
-        print 'Input period            :',T,'s'
-        print 'Input wave height       :',H,'m'
+        print 'INPUT period               :',T,'s'
+        print 'INPUT wave height          :',H,'m'
     
     #
     # calculate wave number
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     try:
         # if lambda is specified
         k = 2*np.pi/lam
-        if verbose: print 'Input wave length       :',lam,'m'
+        if verbose: print 'INPUT wave length          :',lam,'m'
     except NameError: 
         # wavelength not specified, calculate it from T
         # requires scipy.optimize
@@ -125,8 +125,8 @@ if __name__ == '__main__':
         Ur = H/d*(lam/d)**2 #Ursell number
 
         if verbose:
-            print 'Approximate wave length :',lam_deep,'m  (in deep water)'
-            print 'Calculated wave length  :',lam,'m  (diff=%f%%, Ur=%f)' % \
+            print 'Approximate wave length    :',lam_deep,'m  (in deep water)'
+            print 'CALCULATED wave length     :',lam,'m  (diff=%f%%, Ur=%f)' % \
                     ( 100*(lam-lam_deep)/lam_deep, Ur )
     
     e = k*H/2 #dimensionless wave height
@@ -136,31 +136,30 @@ if __name__ == '__main__':
     C0,C2,C4 = evalC(kd)
     unorm = C0 + e**2*C2 + e**4*C4
     umean = unorm*(g/k)**0.5
-    if verbose: print 'Mean wave speed         :',umean,'m/s'
+    if verbose: print 'CALCULATED mean wave speed :',umean,'m/s'
     
     # volume flux under wave (eqn.15)
     #D2,D4 = evalD(kd)
     #Qnorm = unorm*kd + e**2*D2 + e**4*D4
     #print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
 
-    if output=='': sys.exit()
-    
-    if output=='short':
-        print lam, umean
-        sys.exit()
-    elif output[:3].lower()=='lam':
-        print lam
-        sys.exit()
-    elif output[0].lower()=='u':
-        print umean
-        sys.exit()
+    if not output=='':
+        if output=='short':
+            print lam, umean
+            sys.exit()
+        elif output[:3].lower()=='lam':
+            print lam
+            sys.exit()
+        elif output[0].lower()=='u':
+            print umean
+            sys.exit()
     
     #
     # calculate additional quantities for plotting
     #
 
-    x = np.linspace(0,2*lam,200)
-    
+    x = np.linspace(0,2*lam,201)
+
     # free surface profile (eqn.14)
     B22,B31,B42,B44,B53,B55 = evalB(kd)
     kn = kd + e*np.cos(k*x) \
@@ -169,12 +168,31 @@ if __name__ == '__main__':
             + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
             + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
     y = kn/k-d
-    print 'Crest/trough height     :',np.max(y),np.min(y),'m'
+    print 'Crest/trough height        :',np.max(y),np.min(y),'m'
 
+    # max local wave vertical velocity
+    # assume dt=1
+    kx = k*x
+    dydx = (e + e**3*B31 - e**5*(B53+B55)) * np.sin(kx) \
+            + 2*(e**2*B22 + e**4*B42) * np.sin(2*kx) \
+            + 3*(-e**3*B31 + e**5*B53) * np.sin(3*kx) \
+            + 4*e**4*B44 * np.sin(4*kx) \
+            + 5*e**5*B55 * np.sin(5*kx) # = d(ky)/dx
+    dydt = -dydx * umean
+    dydt_max = np.max(np.abs(dydt))
+    print 'Max dy/dt                  :',dydt_max, 'm/s  (%f%% of mean U)'%(100*dydt_max/umean)
+
+    # estiamte local vertical velocity (check)`
+#    dx = x[1] - x[0]
+#    dydt_est = (y[1:102] - y[:101])/dx * umean
+#    print 'Max dy/dt (num estimate):',np.max(np.abs(dydt_est)),'m/s'
+
+    if output=='': sys.exit()
     
     if output=='plot':
         import matplotlib.pyplot as plt
         plt.plot(x,y)
+        plt.plot(x,dydt,'--')
         xranges=[x[0],x[-1]]
         plt.xlim(xranges)
         plt.xlabel('x')
