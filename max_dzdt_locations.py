@@ -25,7 +25,7 @@ if DEBUG1:
     H,lam = [1.2], [33.5676693735]
     makeplots = False
 NH = len(H)
-NT = len(lam)
+NL = len(lam)
 coskx = np.zeros((NH,NL))
 kx = np.zeros((NH,NL))
 maxslope = np.zeros((NH,NL))

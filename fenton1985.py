@@ -53,7 +53,7 @@ def evalD(kd):
 
 def calculateWavenumber(g,T,H,d,guess=None):
     from scipy.optimize import fsolve
-    if guess < 0:
+    if not guess:
         guess = 4*np.pi**2/g/T**2 # deep water approximation, use as a starting guess
     def eqn23_L2(k): # TODO: handle mean current speed not 0
 	C0,C2,C4 = evalC(k*d)
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     if output=='plot':
         import matplotlib.pyplot as plt
         plt.plot(x,y)
-        plt.plot(x,dydt,'--')
+        #plt.plot(x,dydt,'--')
         xranges=[x[0],x[-1]]
         plt.xlim(xranges)
         plt.xlabel('x')
