@@ -107,6 +107,7 @@ if __name__ == '__main__':
     if verbose:
         print 'INPUT period               :',T,'s'
         print 'INPUT wave height          :',H,'m'
+        print ' --------------------------------'
     
     #
     # calculate wave number
@@ -122,12 +123,10 @@ if __name__ == '__main__':
         lam_deep = 2*np.pi/kdeep
         k = calculateWavenumber(g,T,H,d,kdeep)
         lam = 2*np.pi/k
-        Ur = H/d*(lam/d)**2 #Ursell number
 
         if verbose:
-            print 'Approximate wave length    :',lam_deep,'m  (in deep water)'
-            print 'CALCULATED wave length     :',lam,'m  (diff=%f%%, Ur=%f)' % \
-                    ( 100*(lam-lam_deep)/lam_deep, Ur )
+            print 'Approximate wave length    :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
+            print 'CALCULATED wave length     :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
     
     e = k*H/2 #dimensionless wave height
     kd = k*d
@@ -138,11 +137,7 @@ if __name__ == '__main__':
     umean = unorm*(g/k)**0.5
     if verbose: print 'CALCULATED mean wave speed :',umean,'m/s'
     
-    # volume flux under wave (eqn.15)
-    #D2,D4 = evalD(kd)
-    #Qnorm = unorm*kd + e**2*D2 + e**4*D4
-    #print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
-
+    # can quit now if we just need lambda/umean
     if not output=='':
         if output=='short':
             print lam, umean
@@ -153,12 +148,20 @@ if __name__ == '__main__':
         elif output[0].lower()=='u':
             print umean
             sys.exit()
+
+    # volume flux under wave (eqn.15)
+    #D2,D4 = evalD(kd)
+    #Qnorm = unorm*kd + e**2*D2 + e**4*D4
+    #print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
+
+    Ur = H/d*(lam/d)**2 #Ursell number
+    if verbose: print 'Ursell number              :',Ur,'\t\t= H*lam^2/d^3'
     
     #
     # calculate additional quantities for plotting
     #
 
-    x = np.linspace(0,2*lam,201)
+    x = np.linspace(0,2*lam,501)
 
     # free surface profile (eqn.14)
     B22,B31,B42,B44,B53,B55 = evalB(kd)
@@ -168,7 +171,11 @@ if __name__ == '__main__':
             + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
             + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
     y = kn/k-d
-    print 'Crest/trough height        :',np.max(y),np.min(y),'m'
+    ymin,ymax = np.min(y),np.max(y)
+    if verbose:
+        print 'Crest height               :',ymax,'m'
+        print 'Trough height              :',ymin,'m'
+        print 'Above undisturbed water    :',0.5*(ymax+ymin),'m'
 
     # max local wave vertical velocity
     # assume dt=1
@@ -180,7 +187,8 @@ if __name__ == '__main__':
             + 5*e**5*B55 * np.sin(5*kx) # = d(ky)/dx
     dydt = -dydx * umean
     dydt_max = np.max(np.abs(dydt))
-    print 'Max dy/dt                  :',dydt_max, 'm/s  (%f%% of mean U)'%(100*dydt_max/umean)
+    if verbose:
+        print 'Max dy/dt                  :',dydt_max, 'm/s','\t(%f%% of mean U)'%(100*dydt_max/umean)
 
     # estiamte local vertical velocity (check)`
 #    dx = x[1] - x[0]
