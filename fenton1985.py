@@ -2,21 +2,23 @@
 import sys
 import numpy as np
 
-#def evalA(kd): #not used# {{{
-#    A11 = 1./np.sinh(kd)
-#    A22 = 3.*S**2/(2.*(1.-S)**2)
-#    denA31 = (8.*np.sinh(kd*(1.-S)**3))
-#    A31 = (-4. - 20.*S + 10.*S**2 - 13.*S**3)/denA31
-#    A33 = (-2.*S**2 + 11.*S**3)/denA31
-#    A42 = (12.*S - 14.*S**2 - 264.*S**3 - 45.*S**4 - 13.*S**5)/(24.*(1.-S)**5)
-#    A44 = (10.*S**3 - 174.*S**4 + 291.*S**5 + 278.*S**6)/(48.*(3.+2.*S)*(1.-S)**5)
-#    A51 = (-1184. + 32.*S + 13232.*S**2 + 21712.*S**3 + 20940.*S**4 + 12554.*S**5 - 500*S**6 \
-#        - 3341.*S**7 - 670.*S**8)/(64.*np.sinh(kd*(3.+2.*S)*(4.+S)*(1.-S)**6))
-#    A53 = (4.*S + 105.*S**2 + 198.*S**3 - 1376.*S**4 - 1302.*S**5 - 117.*S**6 + 58.*S**7) \
-#        / (32.*np.sinh(kd*(3.+2.*S)*(1.-S)**6))
-#    A55 = (-6.*S**3 + 272.*S**4 - 1552.*S**5 + 852.*S**6 + 2029.*S**7 + 430.*S**8) \
-#        / (64.*np.sinh(kd*(3.+2.*S)*(4.+S)*(1.-S)**6))
-#    return A11,A22,A33,A44,A55,A31,A42,A51,A53# }}}
+def evalA(kd): # {{{
+    S = 1./np.cosh(2*kd)
+    A11 = 1./np.sinh(kd)
+    A22 = 3.*S**2/(2.*(1.-S)**2)
+    denA31 = 8.*np.sinh(kd)*(1.-S)**3
+    A31 = (-4. - 20.*S + 10.*S**2 - 13.*S**3)/denA31
+    A33 = (-2.*S**2 + 11.*S**3)/denA31
+    A42 = (12.*S - 14.*S**2 - 264.*S**3 - 45.*S**4 - 13.*S**5)/(24.*(1.-S)**5)
+    A44 = (10.*S**3 - 174.*S**4 + 291.*S**5 + 278.*S**6)/(48.*(3.+2.*S)*(1.-S)**5)
+    A51 = (-1184. + 32.*S + 13232.*S**2 + 21712.*S**3 + 20940.*S**4 + 12554.*S**5 - 500*S**6 \
+        - 3341.*S**7 - 670.*S**8)/(64.*np.sinh(kd)*(3.+2.*S)*(4.+S)*(1.-S)**6)
+    A53 = (4.*S + 105.*S**2 + 198.*S**3 - 1376.*S**4 - 1302.*S**5 - 117.*S**6 + 58.*S**7) \
+        / (32.*np.sinh(kd)*(3.+2.*S)*(1.-S)**6)
+    A55 = (-6.*S**3 + 272.*S**4 - 1552.*S**5 + 852.*S**6 + 2029.*S**7 + 430.*S**8) \
+        / (64.*np.sinh(kd)*(3.+2.*S)*(4.+S)*(1.-S)**6)
+    return A11,A22,A33,A44,A55,A31,A42,A51,A53# }}}
+
 #def evalE(kd): #not used# {{{
 #    E2 = np.tanh(kd) * (2 + 2.*S + 5.*S**2)/(4.*(1.-S)**2)
 #    E4 = np.tanh(kd) * (8. + 12.*S - 152.*S**2 - 308.*S**3 - 42.*S**4 + 77.*S**5)/(32.*(1.-S)**5)
@@ -51,19 +53,19 @@ def evalD(kd):
     D4 =  np.tanh(kd)**-0.5 * (2. + 4.*S + S**2 + 2.*S**3)/(8.*(1.-S)**3)
     return D2,D4# }}}
 
-def calculateWavenumber(g,T,H,d,guess=None):
+def calculateWavenumber(g,T,H,d,guess=None):# {{{
     from scipy.optimize import fsolve
     if not guess:
         guess = 4*np.pi**2/g/T**2 # deep water approximation, use as a starting guess
     def eqn23_L2(k): # TODO: handle mean current speed not 0
-	C0,C2,C4 = evalC(k*d)
-	F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
+        C0,C2,C4 = evalC(k*d)
+        F = -2*np.pi/T/(g*k)**0.5 + C0 + (k*H/2)**2*C2 + (k*H/2)**4*C4
 	#return F*F
 	return F
     k = fsolve(eqn23_L2,guess)
     if isinstance(k,np.ndarray): k = k[0] # depending on version, may return array or scalar
 
-    return k
+    return k# }}}
 
 
 ###############################################################################
