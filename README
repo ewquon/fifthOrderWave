@@ -1,0 +1,11 @@
+SCRIPTS
+
+fenton1985.py : Given the wave period and height, calculate relevant quantities
+
+velocity_field.py : Given the wave period and height, plot velocity fields
+
+max_velocities.py : Given the wave period and height, calculate the maximum x-velocity assuming it occurs at the wave crest and the maximum z-velocity on the wave free surface
+
+NOTES
+
+- in all cases, the depth is assumed to be a hard-coded constant, d=4.0 m

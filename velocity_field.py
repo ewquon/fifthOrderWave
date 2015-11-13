@@ -1,17 +1,28 @@
 #!/usr/bin/python
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from fenton1985 import *
 
 #--------
 # INPUTS
-T = 5.66
-H = 1.2
+#T = 5.66
+#H = 1.2
 d = 4 #15
 g = 9.81
 nL = 80
 nH = 20
+Nlevels=21 # contour levels
 #--------
+if len(sys.argv) <= 2: 
+    print 'Plots the x-,z-perturbation velocities in water and'
+    print '  the velocity magnitude for four wave periods. A '
+    print '  dashed line is plotted at a depth of 0.25*lambda'
+    print 'Specify the wave period and height:'
+    print '  USAGE:',sys.argv[0],'[T] [H]'
+    sys.exit()
+T = float(sys.argv[1])
+H = float(sys.argv[2])
 
 k = calculateWavenumber(g,T,H,d)
 kd = k*d
@@ -63,8 +74,9 @@ Vdelta = (e*A11 + e**3*A31 + e**5*A51) * np.sinh(  k*Y)*np.sin(  k*X) \
 
 #U = -umean + C0*np.sqrt(g/k)*Udelta    # in wave frame, positive u is in -ve x direction
 #U = umean - C0*np.sqrt(g/k)*Udelta     # in stationary frame
-U = C0*np.sqrt(g/k)*Udelta             # downwave perturbation in stationary frame
-V = C0*np.sqrt(g/k)*Vdelta             # downwave perturbation in stationary frame
+unorm = C0*np.sqrt(g/k)
+U = unorm*Udelta             # downwave perturbation in stationary frame
+V = unorm*Vdelta             # downwave perturbation in stationary frame
 
 Umag = np.sqrt( (umean+U)**2 + V**2 )
 
@@ -84,27 +96,27 @@ U_ = np.ma.array(U, mask=mask)
 V_ = np.ma.array(V, mask=mask)
 Umag_ = np.ma.array(Umag, mask=mask)
 
-print 'max x,y-velocity:', np.max(U_)+umean, np.max(V_)
+print 'approximate max x,y-velocity:', np.max(U_)+umean, np.max(V_)
 
 #
 # plot
 #
-fig, ax = plt.subplots(nrows=3)
+fig, ax = plt.subplots(nrows=3,sharex=True,sharey=True)
 def plot_overlay(ax):
     ax.plot(x,ysurf,'k',linewidth=3)
     ax.plot([x[0],x[-1]],[-0.25*lam,-0.25*lam],'k--')
 
-hc = ax[0].contourf(X,Y-d,U_)
+hc = ax[0].contourf(X,Y-d,U_,Nlevels)
 plt.colorbar(hc,ax=ax[0])
 plot_overlay(ax[0])
 ax[0].set_ylabel('u(x,y)')
 
-hc = ax[1].contourf(X,Y-d,V_)
+hc = ax[1].contourf(X,Y-d,V_,Nlevels)
 plt.colorbar(hc,ax=ax[1])
 plot_overlay(ax[1])
 ax[1].set_ylabel('v(x,y)')
 
-hc = ax[2].contourf(X,Y-d,Umag_)
+hc = ax[2].contourf(X,Y-d,Umag_,Nlevels)
 plt.colorbar(hc,ax=ax[2])
 plot_overlay(ax[2])
 ax[2].set_ylabel('|U|')

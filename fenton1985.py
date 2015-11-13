@@ -107,6 +107,7 @@ if __name__ == '__main__':
             (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
     
     if verbose:
+        print 'FIXED depth                :',d,'m'
         print 'INPUT period               :',T,'s'
         print 'INPUT wave height          :',H,'m'
         print ' --------------------------------'
@@ -129,6 +130,7 @@ if __name__ == '__main__':
         if verbose:
             print 'Approximate wave length    :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
             print 'CALCULATED wave length     :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
+            print 'waveheight / wavelength    :',H/lam
     
     e = k*H/2 #dimensionless wave height
     kd = k*d
@@ -173,24 +175,24 @@ if __name__ == '__main__':
             + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
             + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
     y = kn/k-d
-    ymin,ymax = np.min(y),np.max(y)
+    #ymin,ymax = np.min(y),np.max(y)
     if verbose:
-        print 'Crest height               :',ymax,'m'
-        print 'Trough height              :',ymin,'m'
-        print 'Above undisturbed water    :',0.5*(ymax+ymin),'m'
+        print 'Crest height               :',( e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymax
+        print 'Trough height              :',(-e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymin
+        print 'Above undisturbed water    :',(e**2*B22 + e**4*(B42+B44))/k,'m'#,0.5*(ymax+ymin)
 
-    # max local wave vertical velocity
-    # assume dt=1
-    kx = k*x
-    dydx = (e + e**3*B31 - e**5*(B53+B55)) * np.sin(kx) \
-            + 2*(e**2*B22 + e**4*B42) * np.sin(2*kx) \
-            + 3*(-e**3*B31 + e**5*B53) * np.sin(3*kx) \
-            + 4*e**4*B44 * np.sin(4*kx) \
-            + 5*e**5*B55 * np.sin(5*kx) # = d(ky)/dx
-    dydt = -dydx * umean
-    dydt_max = np.max(np.abs(dydt))
-    if verbose:
-        print 'Max dy/dt                  :',dydt_max, 'm/s','\t(%f%% of mean U)'%(100*dydt_max/umean)
+    # estimate max local wave vertical velocity
+#     kx = k*x
+#     dydx = (e + e**3*B31 - e**5*(B53+B55)) * np.sin(kx) \
+#             + 2*(e**2*B22 + e**4*B42) * np.sin(2*kx) \
+#             + 3*(-e**3*B31 + e**5*B53) * np.sin(3*kx) \
+#             + 4*e**4*B44 * np.sin(4*kx) \
+#             + 5*e**5*B55 * np.sin(5*kx) # = d(ky)/dx
+# #    dydt = -dydx * umean
+# #    dydt_max = np.max(np.abs(dydt))
+#     if verbose:
+#         #print 'Approx max dy/dt           :',dydt_max, 'm/s','\t(%f%% of mean U)'%(100*dydt_max/umean)
+#         print 'Approx max wave slope      :',np.max(np.abs(dydx))
 
     # estiamte local vertical velocity (check)`
 #    dx = x[1] - x[0]
