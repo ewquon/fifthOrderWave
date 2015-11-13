@@ -82,7 +82,7 @@ if __name__ == '__main__':
     
     output = ''
     verbose = True
-    if len(sys.argv) < 3:
+    if len(sys.argv) <= 2:
         # need to at least specify the sea state in terms of T and H
         print '\nUSAGE:\n'
         print ' - calculate wavelength (lambda) and mean wave speed (U)'
