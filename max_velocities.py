@@ -1,6 +1,18 @@
 #!/usr/bin/python
 import sys
-if len(sys.argv) <= 2: sys.exit('specify wave period and height')
+if len(sys.argv) <= 2: 
+    # need to at least specify the sea state in terms of T and H
+    print '\nUSAGE:\n'
+    print ' - calculate maximum slope and maximum velocities'
+    print '   in the downwave and normal (x,z) directions\n'
+    print '  ',sys.argv[0]+' [T] [H]\n'
+    print ' - abbreviated output of max(u) and max(w)\n'
+    print '  ',sys.argv[0]+' [T] [H] short\n'
+    sys.exit()
+try: 
+    if sys.argv[3]=='short': verbose = False
+except IndexError: 
+    verbose = True
 
 from fenton1985 import *
 import numpy as np
@@ -20,8 +32,7 @@ k = calculateWavenumber(g,T,H,d)
 kd = k*d
 e = k*H/2
 lam = twopi/k
-umean = lam/T
-print 'mean x-velocity=',umean
+umean = lam/T # used to calculate absolute velocity
 
 # coefficients to evaluate the potential function and wave surface profile
 A11,A22,A33,A44,A55,A31,A42,A51,A53 = evalA(kd)
@@ -59,26 +70,16 @@ C5 = 400*E
 def coskx_eqn(x):  # x = cos(kx)
     eqn = C0 + C1*x + C2*x**2 + C3*x**3 + C4*x**4 + C5*x**5 # = (curvature) / (-k)
     return eqn
-#coskx fsolve(coskx_eqn,0)
 coskx = fsolve(coskx_eqn,1)
 if not isinstance(coskx,float): coskx = coskx[0]
 
 t = np.arccos(coskx)
 kxmax = t
 maxslope = np.abs(A*np.sin(t) + 2*B*np.sin(2*t) + 3*C*np.sin(3*t) +  4*D*np.sin(4*t) +  5*E*np.sin(5*t))
-print 'max slope=',maxslope
-print 'max slope occurs at kx=',kxmax,'in [0,2pi]'
-# print '                  at x=',kxmax/k,' expected less than',0.25*lam
-# 
-# kymax = wavesurf(kxmax)
-# print 'max slope occurs at ky=',kymax
-# print '                     y=',(kymax-kd)/k
-# 
-# # z-velocity at the maximum slope
-# wmax_est = zvel(kxmax,kymax)
-# 
-# print 'estimated max z-velocity:',wmax_est,'m/s'
-print '------------------------------------------'
+if verbose:
+    print 'max slope=',maxslope
+    print 'max slope occurs at kx=',kxmax,'in [0,2pi]'
+    print '------------------------------------------'
 
 def wavesurf(kx): # returns ky
     return kd \
@@ -120,18 +121,17 @@ def dwdx(kx): #returns d[w/unorm]/dx
         +  9*(e**3*A33 + e**5*A53)         * dky * np.cosh(3*ky) * np.sin(3*kx) \
         + 16* e**4*A44                     * dky * np.cosh(4*ky) * np.sin(4*kx) \
         + 25* e**5*A55                     * dky * np.cosh(5*ky) * np.sin(5*kx)
-#kxmax,info,istat,mesg = fsolve(dwdx,np.pi/4,full_output=True)
-#print info
 kxmax = fsolve(dwdx,np.pi/4)
 if not isinstance(kxmax,float): kxmax = kxmax[0]
 kymax = wavesurf(kxmax)
 wmax = zvel(kxmax,kymax)
 
-print 'vmax occurs at kx=',kxmax,'in [0,2pi]'
-print '             at x=',kxmax/k,' expected less than',0.25*lam
-# print 'vmax occurs at ky=',kymax
-# print '             at y=',(kymax-kd)/k
-print 'MAXIMUM X,Z VELOCITIES:',umean+umax,wmax,'m/s'
+if verbose:
+    print 'max(v) occurs at kx=',kxmax,'in [0,2pi]'
+    print '                  x=',kxmax/k,' --expected less than lam/4=',0.25*lam
+    print 'MAXIMUM X,Z VELOCITIES:',umean+umax,wmax,'m/s'
+else:
+    print umean+umax,wmax
 
 #------------------------------------------------------------------
 

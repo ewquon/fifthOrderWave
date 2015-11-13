@@ -28,9 +28,11 @@ k = calculateWavenumber(g,T,H,d)
 kd = k*d
 lam = 2*np.pi/k
 e = k*H/2
-print 'wavenumber :',k,'1/m'
-print 'wavelength :',lam,'m'
-print 'waveheight :',H,'m','(non-dim height=%f)'%(e)
+print 'FIXED depth       :',d,'m'
+print 'INPUT wave period :',T,'s'
+print 'INPUT wave height :',H,'m','(non-dim height=%f)'%(e)
+print '  wavenumber :',k,'1/m'
+print '  wavelength :',lam,'m'
 
 #
 # setup contour mesh
@@ -57,7 +59,7 @@ ysurf = kn/k
 C0,C2,C4 = evalC(kd)
 umean = np.sqrt(g/k)*( C0 + e**2*C2 + e**4*C4 )
 
-print 'mean horizontal fluid speed :',umean,'m/s'
+print '  mean horizontal fluid speed :',umean,'m/s'
 #print '  calculated from lambda, T :',lam/T,'m/s  ( diff=',umean-lam/T,')'
 
 A11,A22,A33,A44,A55,A31,A42,A51,A53 = evalA(kd)
@@ -75,14 +77,14 @@ Vdelta = (e*A11 + e**3*A31 + e**5*A51) * np.sinh(  k*Y)*np.sin(  k*X) \
 #U = -umean + C0*np.sqrt(g/k)*Udelta    # in wave frame, positive u is in -ve x direction
 #U = umean - C0*np.sqrt(g/k)*Udelta     # in stationary frame
 unorm = C0*np.sqrt(g/k)
-U = unorm*Udelta             # downwave perturbation in stationary frame
-V = unorm*Vdelta             # downwave perturbation in stationary frame
+U = unorm*Udelta # downwave perturbation in stationary frame
+V = unorm*Vdelta # downwave perturbation in stationary frame
 
 Umag = np.sqrt( (umean+U)**2 + V**2 )
 
 Ubed = Umag[0,:]
 stdev = np.std(Ubed)
-print 'velocity magnitude on seabed (min/max/stdev):',\
+print '  fluid speed on seabed (min/max/stdev):',\
         np.min(Ubed),np.max(Ubed),stdev,\
         '(%f%% Umean)'%(100*stdev/umean)
 
@@ -96,7 +98,8 @@ U_ = np.ma.array(U, mask=mask)
 V_ = np.ma.array(V, mask=mask)
 Umag_ = np.ma.array(Umag, mask=mask)
 
-print 'approximate max x,y-velocity:', np.max(U_)+umean, np.max(V_)
+print 'approximate max x,z-velocity:', np.max(U_)+umean, np.max(V_)
+print '*** run max_velocities.py for exact values ***'
 
 #
 # plot
@@ -109,12 +112,12 @@ def plot_overlay(ax):
 hc = ax[0].contourf(X,Y-d,U_,Nlevels)
 plt.colorbar(hc,ax=ax[0])
 plot_overlay(ax[0])
-ax[0].set_ylabel('u(x,y)')
+ax[0].set_ylabel('u(x,z)')
 
 hc = ax[1].contourf(X,Y-d,V_,Nlevels)
 plt.colorbar(hc,ax=ax[1])
 plot_overlay(ax[1])
-ax[1].set_ylabel('v(x,y)')
+ax[1].set_ylabel('w(x,z)')
 
 hc = ax[2].contourf(X,Y-d,Umag_,Nlevels)
 plt.colorbar(hc,ax=ax[2])
