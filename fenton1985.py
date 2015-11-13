@@ -137,8 +137,9 @@ if __name__ == '__main__':
     
     # mean horizontal fluid speed (eqn.13)
     C0,C2,C4 = evalC(kd)
-    unorm = C0 + e**2*C2 + e**4*C4
-    umean = unorm*(g/k)**0.5
+    u = C0 + e**2*C2 + e**4*C4
+    unorm = (g/k)**0.5
+    umean = unorm * u
     if verbose: print 'CALCULATED mean wave speed :',umean,'m/s'
     
     # can quit now if we just need lambda/umean
