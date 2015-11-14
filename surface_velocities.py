@@ -72,12 +72,18 @@ kzsurf = wavesurf(kx)
 usurf = xvel(kx,kzsurf)
 wsurf = zvel(kx,kzsurf)
 
-plt.plot(kx/(2*np.pi),usurf,linewidth=2,label='u\'')
-plt.plot(kx/(2*np.pi),wsurf,linewidth=2,label='w\'')
-plt.xlabel('x / $\lambda$')
-plt.ylabel('velocity [m/s]')
-plt.title('Surface Velocities')
-plt.legend(loc='best')
+fig, ax1 = plt.subplots()
+ax2 = ax1.twinx()
+
+ax1.plot(kx/(2*np.pi),kzsurf/k-d,'k:')#,color='0.3')
+ax1.set_ylabel('wave height [m]')
+
+ax2.plot(kx/(2*np.pi),usurf,linewidth=2,label='u\'')
+ax2.plot(kx/(2*np.pi),wsurf,linewidth=2,label='w\'')
+ax2.set_xlabel('x / $\lambda$')
+ax2.set_ylabel('velocity [m/s]')
+ax2.legend(loc='best')
+fig.suptitle('Surface Velocities')
 
 print 'umean =',umean,'m/s'
 print 'approx max x-vel',np.max(usurf) + umean
