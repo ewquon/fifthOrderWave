@@ -43,12 +43,19 @@ unorm = C0 * np.sqrt(g/k)
 #
 # calculate umax assuming it occurs at the wave crest (kxmax=0)
 #
+kymin = kd - e + e**2*B22 + e**4*(B42+B44)
+umin =  - (e*A11 + e**3*A31 + e**5*A51) * np.cosh(  kymin) \
+        + 2*(e**2*A22 + e**4*A42)       * np.cosh(2*kymin) \
+        - 3*(e**3*A33 + e**5*A53)       * np.cosh(3*kymin) \
+        + 4* e**4*A44                   * np.cosh(4*kymin) \
+        - 5* e**5*A55                   * np.cosh(5*kymin)
 kymax = kd + e + e**2*B22 + e**4*(B42+B44)
-umax = (e*A11 + e**3*A31 + e**5*A51) * np.cosh(  kymax) \
-        + 2*(e**2*A22 + e**4*A42)    * np.cosh(2*kymax) \
-        + 3*(e**3*A33 + e**5*A53)    * np.cosh(3*kymax) \
-        + 4* e**4*A44                * np.cosh(4*kymax) \
-        + 5* e**5*A55                * np.cosh(5*kymax)
+umax =    (e*A11 + e**3*A31 + e**5*A51) * np.cosh(  kymax) \
+        + 2*(e**2*A22 + e**4*A42)       * np.cosh(2*kymax) \
+        + 3*(e**3*A33 + e**5*A53)       * np.cosh(3*kymax) \
+        + 4* e**4*A44                   * np.cosh(4*kymax) \
+        + 5* e**5*A55                   * np.cosh(5*kymax)
+umin *= unorm
 umax *= unorm
 
 #
@@ -129,9 +136,12 @@ wmax = zvel(kxmax,kymax)
 if verbose:
     print 'max(v) occurs at kx=',kxmax,'in [0,2pi]'
     print '                  x=',kxmax/k,' --expected less than lam/4=',0.25*lam
-    print 'MAXIMUM X,Z VELOCITIES:',umean+umax,wmax,'m/s'
+    #print 'MAXIMUM X,Z VELOCITIES:',umean+umax,wmax,'m/s'
+    print 'MIN/MAXIMUM X-VELOCITIES:',umin,umax,'m/s'
+    print 'MIN/MAXIMUM Z-VELOCITIES:',-wmax,wmax,'m/s'
 else:
-    print umean+umax,wmax
+    #print umean+umax,wmax
+    print umax,wmax
 
 #------------------------------------------------------------------
 
