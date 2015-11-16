@@ -98,7 +98,8 @@ U_ = np.ma.array(U, mask=mask)
 V_ = np.ma.array(V, mask=mask)
 Umag_ = np.ma.array(Umag, mask=mask)
 
-print 'approximate max x,z-velocity:', np.max(U_)+umean, np.max(V_)
+print 'approximate min/max x-velocity:', np.min(U_), np.max(U_)
+print 'approximate min/max z-velocity:', np.min(V_), np.max(V_)
 print '*** run max_velocities.py for exact values ***'
 
 #

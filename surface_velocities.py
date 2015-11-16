@@ -49,13 +49,14 @@ def xvel(kx,ky):
         + 2*(e**2*A22 + e**4*A42)              * np.cosh(2*ky) * np.cos(2*kx) \
         + 3*(e**3*A33 + e**5*A53)              * np.cosh(3*ky) * np.cos(3*kx) \
         + 4* e**4*A44                          * np.cosh(4*ky) * np.cos(4*kx) \
-        + 5* e**5*A55                          * np.cosh(5*ky) * np.cos(5*kx) \
-        +   (e*A11 + e**3*A31 + e**5*A51) * dy * np.sinh(  ky) * np.sin(  kx) \
-        + 2*(e**2*A22 + e**4*A42)         * dy * np.sinh(2*ky) * np.sin(2*kx) \
-        + 3*(e**3*A33 + e**5*A53)         * dy * np.sinh(3*ky) * np.sin(3*kx) \
-        + 4* e**4*A44                     * dy * np.sinh(4*ky) * np.sin(4*kx) \
-        + 5* e**5*A55                     * dy * np.sinh(5*ky) * np.sin(5*kx)
-    return unorm * u
+        + 5* e**5*A55                          * np.cosh(5*ky) * np.cos(5*kx)
+#    uderiv = (e*A11 + e**3*A31 + e**5*A51) * dy * np.sinh(  ky) * np.sin(  kx) \
+#         + 2*(e**2*A22 + e**4*A42)         * dy * np.sinh(2*ky) * np.sin(2*kx) \
+#         + 3*(e**3*A33 + e**5*A53)         * dy * np.sinh(3*ky) * np.sin(3*kx) \
+#         + 4* e**4*A44                     * dy * np.sinh(4*ky) * np.sin(4*kx) \
+#         + 5* e**5*A55                     * dy * np.sinh(5*ky) * np.sin(5*kx)
+#    return unorm*u, unorm*uderiv
+    return unorm*u
 
 def zvel(kx,ky):
     # note the 'k' factor from the derivative is absorved into 'unorm'
@@ -68,6 +69,7 @@ def zvel(kx,ky):
 
 kx = np.linspace(0,4*np.pi,501)
 kzsurf = wavesurf(kx)
+surf = kzsurf/k - d
 
 usurf = xvel(kx,kzsurf)
 wsurf = zvel(kx,kzsurf)
@@ -75,18 +77,21 @@ wsurf = zvel(kx,kzsurf)
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 
-ax1.plot(kx/(2*np.pi),kzsurf/k-d,'k:')#,color='0.3')
+ax1.plot(kx/(2*np.pi),surf-np.min(surf),'k--')#,color='0.3')
 ax1.set_ylabel('wave height [m]')
+#ax1.set_ylim((-0.75*H,1.25*H))
+ax1.set_ylim((0,5*H))
 
-ax2.plot(kx/(2*np.pi),usurf,linewidth=2,label='u\'')
-ax2.plot(kx/(2*np.pi),wsurf,linewidth=2,label='w\'')
+ax2.plot(kx/(2*np.pi),usurf,'b',linewidth=2,label='u\'')
+ax2.plot(kx/(2*np.pi),wsurf,'g',linewidth=2,label='w\'')
 ax2.set_xlabel('x / $\lambda$')
 ax2.set_ylabel('velocity [m/s]')
 ax2.legend(loc='best')
+
 fig.suptitle('Surface Velocities')
 
 print 'umean =',umean,'m/s'
-print 'approx max x-vel',np.max(usurf) + umean
-print 'approx max z-vel',np.max(wsurf)
+print 'approx min/max x-vel',np.min(usurf),np.max(usurf)
+print 'approx min/max z-vel',np.min(wsurf),np.max(wsurf)
 
 plt.show()
