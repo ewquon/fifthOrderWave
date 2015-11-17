@@ -22,8 +22,8 @@ Nref = len(refT)
 assert(Nref==len(refH))
 
 #T,H = [5.66],[1.2]
-T = np.arange(1.4,6.0,0.2)
-H = np.arange(0.05,2.0,0.1)
+T = np.arange(1.4,5.8,0.2)
+H = np.arange(0.05,1.75,0.1)
 #T = np.arange(1.4,10.0,0.2)
 #H = np.arange(0.05,3.0,0.1)
 NT = len(T)
@@ -175,6 +175,7 @@ if makeplots:
     ax.set_zlabel('wave length [m]')
     ax.set_title('Nonlinear wave length')
     ax.plot(refH,refT,reflamb,'k+-',markeredgewidth=3)
+    ax.plot([refH[0]],[refT[0]],[reflamb[0]],'bo',markeredgewidth=4)
 
     fig = plt.figure()
     ax = fig.add_subplot(111,projection='3d')
@@ -184,6 +185,7 @@ if makeplots:
     ax.set_zlabel('wave speed [m/s]')
     ax.set_title('Mean wave speed')
     ax.plot(refH,refT,refuavg,'k+-',markeredgewidth=3)
+    ax.plot([refH[0]],[refT[0]],[refuavg[0]],'bo',markeredgewidth=4)
 
     fig = plt.figure()
     ax = fig.add_subplot(111,projection='3d')
@@ -193,6 +195,7 @@ if makeplots:
     ax.set_zlabel('dz/dx')
     ax.set_title('Maximum wave slope')
     ax.plot(refH,refT,refdzdx,'k+-',markeredgewidth=3)
+    ax.plot([refH[0]],[refT[0]],[refdzdx[0]],'bo',markeredgewidth=4)
 
     fig = plt.figure()
     ax = fig.add_subplot(111,projection='3d')
@@ -202,6 +205,7 @@ if makeplots:
     ax.set_zlabel('u [m/s]')
     ax.set_title('Minimum local downwave velocity')
     ax.plot(refH,refT,refumin,'k+-',markeredgewidth=3)
+    ax.plot([refH[0]],[refT[0]],[refumin[0]],'bo',markeredgewidth=4)
 
     fig = plt.figure()
     ax = fig.add_subplot(111,projection='3d')
@@ -211,6 +215,7 @@ if makeplots:
     ax.set_zlabel('u [m/s]')
     ax.set_title('Maximum local downwave velocity')
     ax.plot(refH,refT,refumax,'k+-',markeredgewidth=3)
+    ax.plot([refH[0]],[refT[0]],[refumax[0]],'bo',markeredgewidth=4)
 
     fig = plt.figure()
     ax = fig.add_subplot(111,projection='3d')
@@ -220,6 +225,7 @@ if makeplots:
     ax.set_zlabel('w [m/s]')
     ax.set_title('Maximum local vertical velocity')
     ax.plot(refH,refT,refwmax,'k+-',markeredgewidth=3)
+    ax.plot([refH[0]],[refT[0]],[refwmax[0]],'bo',markeredgewidth=4)
 
 #    fig = plt.figure()
 #    ax = fig.add_subplot(111,projection='3d')
