@@ -117,17 +117,17 @@ def zvel(kx,ky):
 #
 def dwdx(kx): #returns d[w/unorm]/dx
     ky = wavesurf(kx)
-    dky = dkydx(kx)
+    #dky = dkydx(kx)
     return   (e*A11 + e**3*A31 + e**5*A51) *  k  * np.sinh(  ky) * np.cos(  kx) \
         +  4*(e**2*A22 + e**4*A42)         *  k  * np.sinh(2*ky) * np.cos(2*kx) \
         +  9*(e**3*A33 + e**5*A53)         *  k  * np.sinh(3*ky) * np.cos(3*kx) \
         + 16* e**4*A44                     *  k  * np.sinh(4*ky) * np.cos(4*kx) \
         + 25* e**5*A55                     *  k  * np.sinh(5*ky) * np.cos(5*kx) \
-        +    (e*A11 + e**3*A31 + e**5*A51) * dky * np.cosh(  ky) * np.sin(  kx) \
-        +  4*(e**2*A22 + e**4*A42)         * dky * np.cosh(2*ky) * np.sin(2*kx) \
-        +  9*(e**3*A33 + e**5*A53)         * dky * np.cosh(3*ky) * np.sin(3*kx) \
-        + 16* e**4*A44                     * dky * np.cosh(4*ky) * np.sin(4*kx) \
-        + 25* e**5*A55                     * dky * np.cosh(5*ky) * np.sin(5*kx)
+        #+    (e*A11 + e**3*A31 + e**5*A51) * dky * np.cosh(  ky) * np.sin(  kx) \
+        #+  4*(e**2*A22 + e**4*A42)         * dky * np.cosh(2*ky) * np.sin(2*kx) \
+        #+  9*(e**3*A33 + e**5*A53)         * dky * np.cosh(3*ky) * np.sin(3*kx) \
+        #+ 16* e**4*A44                     * dky * np.cosh(4*ky) * np.sin(4*kx) \
+        #+ 25* e**5*A55                     * dky * np.cosh(5*ky) * np.sin(5*kx)
 kxmax = fsolve(dwdx,np.pi/4)
 if not isinstance(kxmax,float): kxmax = kxmax[0]
 kymax = wavesurf(kxmax)

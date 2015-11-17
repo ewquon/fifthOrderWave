@@ -118,7 +118,7 @@ if __name__ == '__main__':
     try:
         # if lambda is specified
         k = 2*np.pi/lam
-        if verbose: print 'INPUT wave length          :',lam,'m'
+        if verbose: print 'INPUT wavelength           :',lam,'m'
     except NameError: 
         # wavelength not specified, calculate it from T
         # requires scipy.optimize
@@ -128,9 +128,9 @@ if __name__ == '__main__':
         lam = 2*np.pi/k
 
         if verbose:
-            print 'Approximate wave length    :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
-            print 'CALCULATED wave length     :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
-            print 'waveheight / wavelength    :',H/lam
+            print 'Approximate wavelength     :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
+            print 'CALCULATED wavelength      :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
+            print 'Waveheight / wavelength    :',H/lam
     
     e = k*H/2 #dimensionless wave height
     kd = k*d
@@ -181,6 +181,7 @@ if __name__ == '__main__':
         print 'Crest height               :',( e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymax
         print 'Trough height              :',(-e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymin
         print 'Above undisturbed water    :',(e**2*B22 + e**4*(B42+B44))/k,'m'#,0.5*(ymax+ymin)
+        print 'Approximate max wave slope :',np.max( np.diff(y) / np.diff(x) )
 
     # estimate max local wave vertical velocity
 #     kx = k*x
