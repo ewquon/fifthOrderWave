@@ -28,7 +28,8 @@ savefinal = True
 # DEBUG:
 verbose = False
 timing = False
-checksurfplot = False
+checkinitfit = True # verify initial offset calculation and fit of theoretical profile
+checksurfplot = False # verify wavelength calculation
 
 if timing: import time
 
@@ -51,6 +52,7 @@ with open(macro, 'r') as f:
                 exec(line)
 
 k = 2*np.pi/L
+if verbose: print 'k=',k
 kd = k * d
 if timing: tcurr = time.time(); print '  (done in %f s)'%(tcurr-tlast); tlast = tcurr
 
@@ -117,7 +119,10 @@ def readCsv(fname,N=-1): # assume 1 header line
             x[i] = float(line[0])
             y[i] = float(line[1])
     order = x.argsort()
-    return x[order],y[order]
+    x = x[order]
+    y = y[order]
+    #assert( not any( np.diff(x)==0 ) )
+    return x,y
 
 #
 # process all csv files
@@ -142,34 +147,85 @@ for itime in range(Ntimes):
         #
         # find the offset at (near) t=0
         #
-        def inlet(xoff): # ==surf(xref=0)
-            kn = knorm*np.cos(k*(-xoff)) \
-                + knorm**2*B22*np.cos(2*k*(-xoff)) \
-                + knorm**3*B31*(np.cos(k*(-xoff)) - np.cos(3*k*(-xoff))) \
-                + knorm**4*(B42*np.cos(2*k*(-xoff)) + B44*np.cos(4*k*(-xoff))) \
-                + knorm**5*( \
-                    -(B53+B55)*np.cos(k*(-xoff)) \
-                    + B53*np.cos(3*k*(-xoff)) \
-                    + B55*np.cos(5*k*(-xoff)) \
-                    )
-            return kn/k - y[0]
-        def inletSlope(xoff):
-            ytmp = surf(xoff)
-            return (ytmp[1]-ytmp[0])/(xref[1]-xref[0])
-        guess = 0 #-L/2
-        xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
-        #print info
-        if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
-        while xoff0 < 0 or \
-                (not np.sign(inletSlope(xoff0)) == np.sign(y[1]-y[0])) or \
-                np.abs(info['fvec'][0]) > TOL:
-            guess += L/4
-            xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
-            #print info
-            if verbose: print '  guess:',guess,' xoff,slope=',xoff0,inletSlope(xoff0)
-            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+#        def inlet(xoff): # ==surf(xref=0)
+#            kn = knorm*np.cos(k*(-xoff)) \
+#                + knorm**2*B22*np.cos(2*k*(-xoff)) \
+#                + knorm**3*B31*(np.cos(k*(-xoff)) - np.cos(3*k*(-xoff))) \
+#                + knorm**4*(B42*np.cos(2*k*(-xoff)) + B44*np.cos(4*k*(-xoff))) \
+#                + knorm**5*( \
+#                    -(B53+B55)*np.cos(k*(-xoff)) \
+#                    + B53*np.cos(3*k*(-xoff)) \
+#                    + B55*np.cos(5*k*(-xoff)) \
+#                    )
+#            return kn/k - y[0]
+#        def inletSlope(xoff):
+#            ytmp = surf(xoff)
+#            return (ytmp[1]-ytmp[0])/(xref[1]-xref[0])
+#        guess = 0
+#        xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
+#        if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+#        while xoff0 < 0 or \
+#                (not np.sign(inletSlope(xoff0)) == np.sign(y[1]-y[0])) or \
+#                np.abs(info['fvec'][0]) > TOL:
+#            guess += L/4
+#            xoff0,info,istat,msg = fsolve(inlet,guess,full_output=True)
+#            if isinstance(xoff0,np.ndarray): xoff0 = xoff0[0]
+#            if verbose: 
+#                print istat,msg
+#                print info
+#                print '  guess:',guess,' xoff,slope=',xoff0,inletSlope(xoff0), \
+#                        ' |f|=',np.abs(info['fvec'][0])
+#            if not istat==1:
+#                print 'STOPPING... Problem with convergence:',msg
+#                break
+        Nx = len(x)
+        dy = np.zeros(Nx)
+        xm,ym = [],[]
+        for i in range(1,Nx-1):
+            dy[i] = (y[i+1]-y[i-1])/(x[i+1]-x[i-1])
+        for i in range(1,Nx-2):
+            if not np.sign(dy[i+1]) == np.sign(dy[i]): #local min/maximum
+                x0 = x[i] - (x[i+1]-x[i])/(dy[i+1]-dy[i])*dy[i]
+                if checkinitfit:
+                    #y0 = y[i] + (y[i+1]-y[i])/(x[i+1]-x[i])*(x0-x[i])
+                    fint = interpolate.interp1d( x[i-1:i+3], y[i-1:i+3], kind='cubic' )
+                    y0 = fint(x0)
+                curv1 = (y[i+1] - 2*y[i]   + y[i-1]) / np.mean( np.diff(x[i-1:i+2]) )
+                curv2 = (y[i+2] - 2*y[i+1] + y[i]  ) / np.mean( np.diff(x[i  :i+3]) )
+                if verbose:
+                    print 'checking (%f,%f) (%f,%f) (%f,%f) (%f,%f)' \
+                        % ( x[i-1],y[i-1], x[i],y[i], x[i+1],y[i+1], x[i+2],y[i+2] )
+                    if checkinitfit:
+                        print '  min/maximum at (%f,%f)' % (x0,y0)
+                    else:
+                        print '  min/maximum at',x0
+                    print '  curvatures',curv1,curv2
+                assert( x0 >= x[i] and x0 <= x[i+1] )
+                #assert( np.sign(curv1) == np.sign(curv2) )
+                if not np.sign(curv1) == np.sign(curv2):
+                    if np.abs(curv1) > np.abs(curv2): curv = curv1
+                    else: curv = curv2
+                    if verbose: print '  using curv=',curv
+                else: curv = curv1
+                if curv < 0: 
+                    xm.append(x0)
+                    if checkinitfit: ym.append(y0)
+        xoff0 = xm[0]
+
         print 'initial offset:',xoff0
-            
+        if checkinitfit:
+            plt.figure()
+            plt.plot(xref,surf(xoff0+U*(t-t0)),'k:',linewidth=3,label='theory (fitted)')
+            plt.plot(x,y,'b',label='initial simulation')
+            try: plt.plot(xm,ym,'r+',label='detected crests')
+            except NameError: pass
+            plt.legend(loc='best')
+            plt.xlabel('x')
+            plt.ylabel('z')
+            plt.title('Initial offset = %f'%(xoff0))
+            plt.savefig('init_offset_check.png')
+            if showplots: plt.show()
+
     else:
 
         if verbose: print 'Processing',fname
@@ -242,9 +298,10 @@ for itime in range(Ntimes):
     if checksurfplot:
         print guesses
         print 't,lambda',t,lam[itime]
-        plt.plot(x,y,'ko')
-        plt.plot(x,ysmoo,'b-')
-        plt.plot(guesses,np.zeros(len(guesses)),'rx')
+        plt.plot(x,y,'ko',label='simulation data')
+        plt.plot(x,ysmoo,'b-',label='smoothed data (for finding zeroes)')
+        plt.plot(guesses,np.zeros(len(guesses)),'rx',label='found zeroes (for calculating lambda)')
+        plt.legend(loc='best')
         plt.show()
 
     #
@@ -258,7 +315,7 @@ for itime in range(Ntimes):
             plt.plot(guesses,np.zeros(len(guesses)),'bo')
         
         if saveplots: #not saveplots==''
-            plt.ylim((-0.55*H,0.55*H))
+            plt.ylim((-0.75*H,1.25*H))
             plt.xlabel('x')
             plt.ylabel('z')
             plt.title('wave surface')
