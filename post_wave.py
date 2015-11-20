@@ -28,7 +28,7 @@ savefinal = True
 # DEBUG:
 verbose = False
 timing = False
-checkinitfit = False # verify initial offset calculation and fit of theoretical profile
+checkinitfit = True # verify initial offset calculation and fit of theoretical profile
 checksurfplot = False # verify wavelength calculation
 
 if timing: import time
@@ -121,7 +121,7 @@ def readCsv(fname,N=-1): # assume 1 header line
     order = x.argsort()
     x = x[order]
     y = y[order]
-    assert( not any( np.diff(x)==0 ) )
+    #assert( not any( np.diff(x)==0 ) )
     return x,y
 
 #
@@ -186,26 +186,30 @@ for itime in range(Ntimes):
         for i in range(1,Nx-2):
             if not np.sign(dy[i+1]) == np.sign(dy[i]): #local min/maximum
                 x0 = x[i] - (x[i+1]-x[i])/(dy[i+1]-dy[i])*dy[i]
-                #y0 = y[i] + (y[i+1]-y[i])/(x[i+1]-x[i])*(x0-x[i])
-                fint = interpolate.interp1d( x[i-1:i+3], y[i-1:i+3], kind='cubic' )
-                y0 = fint(x0)
+                if checkinitfit:
+                    #y0 = y[i] + (y[i+1]-y[i])/(x[i+1]-x[i])*(x0-x[i])
+                    fint = interpolate.interp1d( x[i-1:i+3], y[i-1:i+3], kind='cubic' )
+                    y0 = fint(x0)
                 curv1 = (y[i+1] - 2*y[i]   + y[i-1]) / np.mean( np.diff(x[i-1:i+2]) )
                 curv2 = (y[i+2] - 2*y[i+1] + y[i]  ) / np.mean( np.diff(x[i  :i+3]) )
                 if verbose:
                     print 'checking (%f,%f) (%f,%f) (%f,%f) (%f,%f)' \
                         % ( x[i-1],y[i-1], x[i],y[i], x[i+1],y[i+1], x[i+2],y[i+2] )
-                    print '  min/maximum at (%f,%f)' % (x0,y0)
+                    if checkinitfit:
+                        print '  min/maximum at (%f,%f)' % (x0,y0)
+                    else:
+                        print '  min/maximum at',x0
                     print '  curvatures',curv1,curv2
                 assert( x0 >= x[i] and x0 <= x[i+1] )
                 #assert( np.sign(curv1) == np.sign(curv2) )
                 if not np.sign(curv1) == np.sign(curv2):
                     if np.abs(curv1) > np.abs(curv2): curv = curv1
                     else: curv = curv2
-                    print '  using curv=',curv
+                    if verbose: print '  using curv=',curv
                 else: curv = curv1
                 if curv < 0: 
                     xm.append(x0)
-                    ym.append(y0)
+                    if checkinitfit: ym.append(y0)
         xoff0 = xm[0]
 
         print 'initial offset:',xoff0
@@ -213,12 +217,14 @@ for itime in range(Ntimes):
             plt.figure()
             plt.plot(xref,surf(xoff0+U*(t-t0)),'k:',linewidth=3,label='theory (fitted)')
             plt.plot(x,y,'b',label='initial simulation')
-            try: plt.plot(xm,ym,'rx',label='detected crests')
+            try: plt.plot(xm,ym,'r+',label='detected crests')
             except NameError: pass
             plt.legend(loc='best')
             plt.xlabel('x')
             plt.ylabel('z')
-            plt.show()
+            plt.title('Initial offset = %f'%(xoff0))
+            plt.savefig('init_offset_check.png')
+            if showplots: plt.show()
 
     else:
 
