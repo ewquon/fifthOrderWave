@@ -219,12 +219,15 @@ for selectedTime in plots:
     P = np.abs(F)**2 # spectral power
     if verbose: 
         print 'N =',Nx,' ( nextpow2:',Nfft,')'
-    print 't=',t,':  peak spatial frequency * (2pi/k) =',wn[np.argmax(P[:Nfft/2])]
+
+    kidx = np.nonzero(wn > 5)[0][0]
+    hfe = np.sum(P[kidx:Nfft/2]) * (wn[Nfft/2-1]-wn[kidx])
+
+    print 't=',t,':  peak spatial frequency * (2pi/k), high-freq error =',wn[np.argmax(P[:Nfft/2])],hfe
 
     if makeplot:
-        #lidx = np.nonzero(wn > 5)[0][0]
         plt.subplot(312)
-        #plt.plot(wn[:lidx],P[:lidx],label='t=%.2f'%(t))
+        #plt.plot(wn[:kidx],P[:kidx],label='t=%.2f'%(t))
         plt.plot(wn[:Nfft/2],P[:Nfft/2],label='t=%.2f'%(t))
         plt.subplot(313)
         plt.loglog(wn[:Nfft/2],P[:Nfft/2],label='t=%.2f'%(t))
