@@ -249,6 +249,10 @@ if makeplot:
     plt.ylabel('|F{z}|^2')
     plt.xlim((0.1,20))
     plt.ylim((1e-12,0.1))
+    ax = plt.gca()
+    ax.annotate('max int err=%g'%(hfe),\
+            xy=(.99,.97), xycoords='axes fraction',\
+            horizontalalignment='right',verticalalignment='top')
 
     #plt.tight_layout() # not in version of matplotlib on peregrine
 
