@@ -77,7 +77,7 @@ if __name__ == '__main__':
     #-----------------------
     # hard-coded parameters
     g = 9.81 # m/s^2
-    d = 4.0     # m, depth
+    d = 70.0 # m, depth
     #-----------------------
     
     output = ''
@@ -107,10 +107,11 @@ if __name__ == '__main__':
             (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
     
     if verbose:
-        print 'FIXED depth                :',d,'m'
-        print 'INPUT period               :',T,'s'
-        print 'INPUT wave height          :',H,'m'
-        print ' --------------------------------'
+        print '\nINPUTS'
+        print '  depth                      :',d,'m'
+        print '  wave period                :',T,'s'
+        print '  wave height                :',H,'m'
+        #print ' --------------------------------'
     
     #
     # calculate wave number
@@ -128,10 +129,11 @@ if __name__ == '__main__':
         lam = 2*np.pi/k
 
         if verbose:
-            print 'Approximate wavelength     :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
-            print 'CALCULATED wavelength      :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
-            print 'CALCULATED wavenumber      :',k,'1/m'
-            print 'Waveheight / wavelength    :',H/lam
+            print '\nCALCULATIONS'
+            print '  WAVENUMBER                 :',k,'1/m'
+            print '  Fifth-order WAVELENGTH     :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
+            print '  Approximate wavelength     :',lam_deep,'m  \t= g*T^2/(2*pi)'
+            print '  Waveheight / wavelength    :',H/lam
     
     e = k*H/2 #dimensionless wave height
     kd = k*d
@@ -141,7 +143,8 @@ if __name__ == '__main__':
     u = C0 + e**2*C2 + e**4*C4
     unorm = (g/k)**0.5
     umean = unorm * u
-    if verbose: print 'CALCULATED mean wave speed :',umean,'m/s'
+    if verbose: 
+        print '  mean horizontal wavespeed  :',umean,'m/s'
     
     # can quit now if we just need lambda/umean
     if not output=='':
@@ -161,7 +164,6 @@ if __name__ == '__main__':
     #print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
 
     Ur = H/d*(lam/d)**2 #Ursell number
-    if verbose: print 'Ursell number              :',Ur,'\t\t= H*lam^2/d^3'
     
     #
     # calculate additional quantities for plotting
@@ -178,11 +180,16 @@ if __name__ == '__main__':
             + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
     y = kn/k-d
     #ymin,ymax = np.min(y),np.max(y)
+
     if verbose:
-        print 'Crest height               :',( e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymax
-        print 'Trough height              :',(-e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymin
-        print 'Above undisturbed water    :',(e**2*B22 + e**4*(B42+B44))/k,'m'#,0.5*(ymax+ymin)
-        print 'Approximate max wave slope :',np.max( np.diff(y) / np.diff(x) )
+        #print ' --------------------------------'
+        print '\nOther calcs'
+        print '  Ursell number              :',Ur,'\t\t= H*lam^2/d^3'
+        print '  Crest height               :',( e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymax
+        print '  Trough height              :',(-e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymin
+        print '  Above undisturbed water    :',(e**2*B22 + e**4*(B42+B44))/k,'m'#,0.5*(ymax+ymin)
+        print '  Approximate max wave slope :',np.max( np.diff(y) / np.diff(x) )
+        print ''
 
     # estimate max local wave vertical velocity
 #     kx = k*x
