@@ -130,6 +130,7 @@ if __name__ == '__main__':
         if verbose:
             print 'Approximate wavelength     :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
             print 'CALCULATED wavelength      :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
+            print 'CALCULATED wavenumber      :',k,'1/m'
             print 'Waveheight / wavelength    :',H/lam
     
     e = k*H/2 #dimensionless wave height
