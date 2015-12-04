@@ -73,38 +73,77 @@ def calculateWavenumber(g,T,H,d,guess=None):# {{{
 ###############################################################################
 
 if __name__ == '__main__':
-
+    import argparse
     #-----------------------
     # hard-coded parameters
     g = 9.81 # m/s^2
-    d = 70.0 # m, depth
+    #d = 70.0 # m, depth
     #-----------------------
-    
     output = ''
     verbose = True
-    if len(sys.argv) <= 2:
-        # need to at least specify the sea state in terms of T and H
-        print '\nUSAGE:\n'
-        print ' - calculate wavelength (lambda) and mean wave speed (U)'
-        print '   with option to display plot or save surface profile'
-        print '   coordinates to file\n'
-        print '  ',sys.argv[0]+' [T] [H]'
-        print '  ',sys.argv[0]+' [T] [H] plot\t\t(requires matplotlib)'
-        print '  ',sys.argv[0]+' [T] [H] [filename]\n'
-        print ' - abbreviated output of lambda and U\n'
-        print '  ',sys.argv[0]+' [T] [H] short\n'
-        sys.exit()
-    else:
-        T = float(sys.argv[1])
-        H = float(sys.argv[2])
-    if len(sys.argv) > 3: 
-        try:
-            lam = float(sys.argv[3])
-            if len(sys.argv) > 4: output = sys.argv[4]
-        except ValueError:
-            output = sys.argv[3]
-    if not output=='' and \
-            (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
+
+#    if len(sys.argv) <= 2:
+#        # need to at least specify the sea state in terms of T and H
+#        print '\nUSAGE:\n'
+#        print ' - calculate wavelength (lambda) and mean wave speed (U)'
+#        print '   with option to display plot or save surface profile'
+#        print '   coordinates to file\n'
+#        print '  ',sys.argv[0]+' [T] [H]'
+#        print '  ',sys.argv[0]+' [T] [H] plot\t\t(requires matplotlib)'
+#        print '  ',sys.argv[0]+' [T] [H] [filename]\n'
+#        print ' - abbreviated output of lambda and U\n'
+#        print '  ',sys.argv[0]+' [T] [H] short\n'
+#        sys.exit()
+#    else:
+#        T = float(sys.argv[1])
+#        H = float(sys.argv[2])
+#    if len(sys.argv) > 3: 
+#        try:
+#            lam = float(sys.argv[3])
+#            if len(sys.argv) > 4: output = sys.argv[4]
+#        except ValueError:
+#            output = sys.argv[3]
+#    if not output=='' and \
+#            (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
+    parser = argparse.ArgumentParser(\
+            description='Calculate wavenumber and other relevant quantities\
+            according to fifth-order Stokes wave theory (Ref: Fenton 1985)')
+    parser.add_argument('period', metavar='T', 
+            type=float, default=-1,
+            help='significant wave period [s]')
+    parser.add_argument('height', metavar='H', 
+            type=float, default=-1,
+            help='significant wave height [m]')
+    parser.add_argument('length', metavar='L', 
+            type=float, nargs='?', 
+            help='wave length [m] (to output mean wave speed only)')
+    parser.add_argument('--depth', '-d', metavar='d', 
+            type=float, default=70.0,
+            help='water depth [m]')
+    parser.add_argument('--plot', '-p', action='store_const',
+            const=True, default=False,
+            help='plot wave (requires matplotlib)')
+    parser.add_argument('--save', metavar='surf.dat',
+            type=str, default='',
+            help='save wave surface profile to text file')
+    parser.add_argument('--output', metavar='var',
+            type=str, default='',
+            choices=['short','lam','u'],
+            help='"short" or variable name to output (turns off verbosity)')
+
+    #args = parser.parse_args()
+    args = vars(parser.parse_args())
+    #print args
+    T = args['period']
+    H = args['height']
+    d = args['depth']
+    if args['length']: lam = args['length']
+    if args['plot']: output = 'plot'
+    elif args['save']: 
+        output = args['save']
+    elif args['output']: 
+        output = args['output']
+        verbose = False
     
     if verbose:
         print '\nINPUTS'
