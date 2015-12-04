@@ -126,5 +126,6 @@ plt.colorbar(hc,ax=ax[2])
 plot_overlay(ax[2])
 ax[2].set_ylabel('|U|')
 
+fig.suptitle('Fluid velocity in moving wave frame')
 plt.show()
 
