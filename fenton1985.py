@@ -82,38 +82,15 @@ if __name__ == '__main__':
     output = ''
     verbose = True
 
-#    if len(sys.argv) <= 2:
-#        # need to at least specify the sea state in terms of T and H
-#        print '\nUSAGE:\n'
-#        print ' - calculate wavelength (lambda) and mean wave speed (U)'
-#        print '   with option to display plot or save surface profile'
-#        print '   coordinates to file\n'
-#        print '  ',sys.argv[0]+' [T] [H]'
-#        print '  ',sys.argv[0]+' [T] [H] plot\t\t(requires matplotlib)'
-#        print '  ',sys.argv[0]+' [T] [H] [filename]\n'
-#        print ' - abbreviated output of lambda and U\n'
-#        print '  ',sys.argv[0]+' [T] [H] short\n'
-#        sys.exit()
-#    else:
-#        T = float(sys.argv[1])
-#        H = float(sys.argv[2])
-#    if len(sys.argv) > 3: 
-#        try:
-#            lam = float(sys.argv[3])
-#            if len(sys.argv) > 4: output = sys.argv[4]
-#        except ValueError:
-#            output = sys.argv[3]
-#    if not output=='' and \
-#            (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
     parser = argparse.ArgumentParser(\
             description='Calculate wavenumber and other relevant quantities\
             according to fifth-order Stokes wave theory (Ref: Fenton 1985)')
-    parser.add_argument('period', metavar='T', 
-            type=float, default=-1,
-            help='significant wave period [s]')
     parser.add_argument('height', metavar='H', 
             type=float, default=-1,
             help='significant wave height [m]')
+    parser.add_argument('period', metavar='T', 
+            type=float, default=-1,
+            help='significant wave period [s]')
     parser.add_argument('length', metavar='L', 
             type=float, nargs='?', 
             help='wave length [m] (to output mean wave speed only)')
@@ -134,8 +111,8 @@ if __name__ == '__main__':
     #args = parser.parse_args()
     args = vars(parser.parse_args())
     #print args
-    T = args['period']
     H = args['height']
+    T = args['period']
     d = args['depth']
     if args['length']: lam = args['length']
     if args['plot']: output = 'plot'
@@ -147,10 +124,12 @@ if __name__ == '__main__':
     
     if verbose:
         print '\nINPUTS'
-        print '  depth                      :',d,'m'
-        print '  wave period                :',T,'s'
-        print '  wave height                :',H,'m'
+        print '  Depth                      :',d,'m'
+        print '  Wave Height                :',H,'m'
+        print '  Wave Period                :',T,'s'
         #print ' --------------------------------'
+
+    if H/d > 0.8: print 'WARNING: H/d =',H/d,' (above breaking limit)'
     
     #
     # calculate wave number
@@ -174,6 +153,8 @@ if __name__ == '__main__':
             print '  Approximate wavelength     :',lam_deep,'m  \t= g*T^2/(2*pi)'
             print '  Waveheight / wavelength    :',H/lam
     
+    if H/lam > 0.14: print 'WARNING: H/L =',H/lam,' (above 1/7 breaking limit)'
+
     e = k*H/2 #dimensionless wave height
     kd = k*d
     
@@ -183,7 +164,7 @@ if __name__ == '__main__':
     unorm = (g/k)**0.5
     umean = unorm * u
     if verbose: 
-        print '  mean horizontal wavespeed  :',umean,'m/s'
+        print '  Mean horizontal wavespeed  :',umean,'m/s'
     
     # can quit now if we just need lambda/umean
     if not output=='':
