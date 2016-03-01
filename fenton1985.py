@@ -2,6 +2,12 @@
 import sys
 import numpy as np
 
+#-----------------------
+# hard-coded parameters
+g = 9.81 # m/s^2
+#d = 70.0 # m, depth
+#-----------------------
+
 def evalA(kd): # {{{
     S = 1./np.cosh(2*kd)
     A11 = 1./np.sinh(kd)
@@ -74,12 +80,8 @@ def calculateWavenumber(g,T,H,d,guess=None):# {{{
 
 if __name__ == '__main__':
     import argparse
-    #-----------------------
-    # hard-coded parameters
-    g = 9.81 # m/s^2
-    #d = 70.0 # m, depth
-    #-----------------------
     output = ''
+    generate_coeffs = False
     verbose = True
 
     parser = argparse.ArgumentParser(\
@@ -97,6 +99,9 @@ if __name__ == '__main__':
     parser.add_argument('--depth', '-d', metavar='d', 
             type=float, default=70.0,
             help='water depth [m]')
+    parser.add_argument('--coefficients', '-c', action='store_const',
+            const=True, default=False,
+            help='generate coefficients for linear superposition')
     parser.add_argument('--plot', '-p', action='store_const',
             const=True, default=False,
             help='plot wave (requires matplotlib)')
@@ -115,12 +120,15 @@ if __name__ == '__main__':
     T = args['period']
     d = args['depth']
     if args['length']: lam = args['length']
-    if args['plot']: output = 'plot'
+    if args['plot']: 
+        output = 'plot'
     elif args['save']: 
         output = args['save']
     elif args['output']: 
         output = args['output']
         verbose = False
+
+    if args['coefficients']: generate_coeffs = True
     
     if verbose:
         print '\nINPUTS'
@@ -129,7 +137,7 @@ if __name__ == '__main__':
         print '  Wave Period                :',T,'s'
         #print ' --------------------------------'
 
-    if H/d > 0.8: print 'WARNING: H/d =',H/d,' (above breaking limit)'
+    if H/d > 0.8: print '*****WARNING: H/d =',H/d,' (above breaking limit)*****'
     
     #
     # calculate wave number
@@ -153,7 +161,7 @@ if __name__ == '__main__':
             print '  Approximate wavelength     :',lam_deep,'m  \t= g*T^2/(2*pi)'
             print '  Waveheight / wavelength    :',H/lam
     
-    if H/lam > 0.14: print 'WARNING: H/L =',H/lam,' (above 1/7 breaking limit)'
+    if H/lam > 0.14: print '*****WARNING: H/L =',H/lam,' (above 1/7 breaking limit)*****'
 
     e = k*H/2 #dimensionless wave height
     kd = k*d
@@ -163,8 +171,8 @@ if __name__ == '__main__':
     u = C0 + e**2*C2 + e**4*C4
     unorm = (g/k)**0.5
     umean = unorm * u
-    if verbose: 
-        print '  Mean horizontal wavespeed  :',umean,'m/s'
+    if verbose:
+        print '  Mean horizontal wavespeed  :',umean,'m/s  \t== lam/T'
     
     # can quit now if we just need lambda/umean
     if not output=='':
@@ -186,7 +194,7 @@ if __name__ == '__main__':
     Ur = H/d*(lam/d)**2 #Ursell number
     
     #
-    # calculate additional quantities for plotting
+    # calculate additional quantities for plotting / info
     #
 
     x = np.linspace(0,2*lam,501)
@@ -229,6 +237,34 @@ if __name__ == '__main__':
 #    dydt_est = (y[1:102] - y[:101])/dx * umean
 #    print 'Max dy/dt (num estimate):',np.max(np.abs(dydt_est)),'m/s'
 
+    #
+    # calculate coefficients (e.g. for Star linear superposition wave)
+    #
+    if generate_coeffs:
+
+        # eqn 14:
+        #kn = kd + e*np.cos(k*x) \
+        #        + e**2*B22*np.cos(2*k*x) \
+        #        + e**3*B31*(np.cos(k*x) - np.cos(3*k*x)) \
+        #        + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
+        #        + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
+        # at t=0, z=0 is on the mean surface line
+        coef = np.zeros((5))
+        coef[0] =  e + e**3*B31 - e**5*(B53+B55)  # cos(  k*x)
+        coef[1] =  e**2*B22 + e**4*B42            # cos(2*k*x)
+        coef[2] = -e**3*B31 + e**5*B53            # cos(3*k*x)
+        coef[3] =  e**4*B44                       # cos(4*k*x)
+        coef[4] =  e**5*B55                       # cos(5*k*x)
+
+        print 'amplitude\twavelength\twavenumber'
+        print '   (m)   \t    (m)   \t   (1/m)  '
+        for i,co in enumerate(coef):
+            ki = (i+1)*k
+            Li = 2*np.pi/ki
+            print '{}   {}   {}'.format(co,Li,ki)
+    #
+    # plot/save output
+    #
     if output=='': sys.exit()
     
     if output=='plot':
