@@ -261,7 +261,7 @@ if __name__ == '__main__':
         for i,co in enumerate(coef):
             ki = (i+1)*k
             Li = 2*np.pi/ki
-            print '{}   {}   {}'.format(co,Li,ki)
+            print '{}   {}   {}'.format(co/ki,Li,ki)
     #
     # plot/save output
     #
