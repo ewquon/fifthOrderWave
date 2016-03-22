@@ -260,6 +260,7 @@ if __name__ == '__main__':
         print formatstr.format('period','amplitude','wavelength','wavenumber')
         print formatstr.format('(s)','(m)','(m)','(1/m)')
         print formatstr.format('------','------','------','------')
+        formatstr = '{0:^20.12g} {1:^20.12g} {2:^20.12g} {3:^20.12g}'
         for i,co in enumerate(coef):
             ki = (i+1)*k
             Li = 2*np.pi/ki
