@@ -256,15 +256,17 @@ if __name__ == '__main__':
         coef[3] =  e**4*B44                       # cos(4*k*x)
         coef[4] =  e**5*B55                       # cos(5*k*x)
 
-        print 'period\tamplitude\twavelength\twavenumber'
-        print '  (s) \t   (m)   \t    (m)   \t   (1/m)  '
+        formatstr = '{0:^20} {1:^20} {2:^20} {3:^20}'
+        print formatstr.format('period','amplitude','wavelength','wavenumber')
+        print formatstr.format('(s)','(m)','(m)','(1/m)')
+        print formatstr.format('------','------','------','------')
         for i,co in enumerate(coef):
             ki = (i+1)*k
             Li = 2*np.pi/ki
             C0,C2,C4 = evalC(ki*d)
             e = ki*H/2
             Ti = 1. / ( (C0 + e**2*C2 + e**4*C4)*(g*ki)**0.5/(2*np.pi) )
-            print '{}   {}   {}   {}'.format(Ti,co/ki,Li,ki)
+            print formatstr.format(Ti,co/ki,Li,ki)
     #
     # plot/save output
     #
