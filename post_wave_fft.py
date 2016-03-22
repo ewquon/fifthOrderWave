@@ -11,7 +11,8 @@ surfDir = 'waterSurface'
 
 periodsToCompare = 4
 g = 9.81    # gravity
-NSMOO = 10  # smoothing for zero-finding, don't need to preserve amplitude
+#NSMOO = 10  # smoothing for zero-finding, don't need to preserve amplitude
+NSMOO = 20
 
 # DEBUG:
 verbose = False
@@ -223,7 +224,7 @@ for selectedTime in plots:
     kidx = np.nonzero(wn > 5)[0][0]
     hfe = np.sum(P[kidx:Nfft/2]) * (wn[Nfft/2-1]-wn[kidx])
 
-    print 't=',t,':  peak spatial frequency * (2pi/k), high-freq error =',wn[np.argmax(P[:Nfft/2])],hfe
+    print 't=',t,':  peak wn*(2pi/k), high-freq err =',wn[np.argmax(P[:Nfft/2])],hfe,fname
 
     if makeplot:
         plt.subplot(312)
