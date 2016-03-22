@@ -2,6 +2,12 @@
 import sys
 import numpy as np
 
+#-----------------------
+# hard-coded parameters
+g = 9.81 # m/s^2
+#d = 70.0 # m, depth
+#-----------------------
+
 def evalA(kd): # {{{
     S = 1./np.cosh(2*kd)
     A11 = 1./np.sinh(kd)
@@ -73,44 +79,65 @@ def calculateWavenumber(g,T,H,d,guess=None):# {{{
 ###############################################################################
 
 if __name__ == '__main__':
-
-    #-----------------------
-    # hard-coded parameters
-    g = 9.81 # m/s^2
-    d = 4.0     # m, depth
-    #-----------------------
-    
+    import argparse
     output = ''
+    generate_coeffs = False
     verbose = True
-    if len(sys.argv) <= 2:
-        # need to at least specify the sea state in terms of T and H
-        print '\nUSAGE:\n'
-        print ' - calculate wavelength (lambda) and mean wave speed (U)'
-        print '   with option to display plot or save surface profile'
-        print '   coordinates to file\n'
-        print '  ',sys.argv[0]+' [T] [H]'
-        print '  ',sys.argv[0]+' [T] [H] plot\t\t(requires matplotlib)'
-        print '  ',sys.argv[0]+' [T] [H] [filename]\n'
-        print ' - abbreviated output of lambda and U\n'
-        print '  ',sys.argv[0]+' [T] [H] short\n'
-        sys.exit()
-    else:
-        T = float(sys.argv[1])
-        H = float(sys.argv[2])
-    if len(sys.argv) > 3: 
-        try:
-            lam = float(sys.argv[3])
-            if len(sys.argv) > 4: output = sys.argv[4]
-        except ValueError:
-            output = sys.argv[3]
-    if not output=='' and \
-            (output=='short' or output[:3].lower()=='lam' or output[0].lower()=='u'): verbose = False
+
+    parser = argparse.ArgumentParser(\
+            description='Calculate wavenumber and other relevant quantities\
+            according to fifth-order Stokes wave theory (Ref: Fenton 1985)')
+    parser.add_argument('height', metavar='H', 
+            type=float, default=-1,
+            help='significant wave height [m]')
+    parser.add_argument('period', metavar='T', 
+            type=float, default=-1,
+            help='significant wave period [s]')
+    parser.add_argument('length', metavar='L', 
+            type=float, nargs='?', 
+            help='wave length [m] (to output mean wave speed only)')
+    parser.add_argument('--depth', '-d', metavar='d', 
+            type=float, default=70.0,
+            help='water depth [m]')
+    parser.add_argument('--coefficients', '-c', action='store_const',
+            const=True, default=False,
+            help='generate coefficients for linear superposition')
+    parser.add_argument('--plot', '-p', action='store_const',
+            const=True, default=False,
+            help='plot wave (requires matplotlib)')
+    parser.add_argument('--save', metavar='surf.dat',
+            type=str, default='',
+            help='save wave surface profile to text file')
+    parser.add_argument('--output', metavar='var',
+            type=str, default='',
+            choices=['short','lam','u'],
+            help='"short" or variable name to output (turns off verbosity)')
+
+    #args = parser.parse_args()
+    args = vars(parser.parse_args())
+    #print args
+    H = args['height']
+    T = args['period']
+    d = args['depth']
+    if args['length']: lam = args['length']
+    if args['plot']: 
+        output = 'plot'
+    elif args['save']: 
+        output = args['save']
+    elif args['output']: 
+        output = args['output']
+        verbose = False
+
+    if args['coefficients']: generate_coeffs = True
     
     if verbose:
-        print 'FIXED depth                :',d,'m'
-        print 'INPUT period               :',T,'s'
-        print 'INPUT wave height          :',H,'m'
-        print ' --------------------------------'
+        print '\nINPUTS'
+        print '  Depth                      :',d,'m'
+        print '  Wave Height                :',H,'m'
+        print '  Wave Period                :',T,'s'
+        #print ' --------------------------------'
+
+    if H/d > 0.8: print '*****WARNING: H/d =',H/d,' (above breaking limit)*****'
     
     #
     # calculate wave number
@@ -128,10 +155,14 @@ if __name__ == '__main__':
         lam = 2*np.pi/k
 
         if verbose:
-            print 'Approximate wavelength     :',lam_deep,'m  \t\t= g*T^2/(2*pi)'
-            print 'CALCULATED wavelength      :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
-            print 'Waveheight / wavelength    :',H/lam
+            print '\nCALCULATIONS'
+            print '  WAVENUMBER                 :',k,'1/m'
+            print '  Fifth-order WAVELENGTH     :',lam,'m','\t\t(diff=%f%%)' % (100*(lam-lam_deep)/lam_deep)
+            print '  Approximate wavelength     :',lam_deep,'m  \t= g*T^2/(2*pi)'
+            print '  Waveheight / wavelength    :',H/lam
     
+    if H/lam > 0.14: print '*****WARNING: H/L =',H/lam,' (above 1/7 breaking limit)*****'
+
     e = k*H/2 #dimensionless wave height
     kd = k*d
     
@@ -140,7 +171,8 @@ if __name__ == '__main__':
     u = C0 + e**2*C2 + e**4*C4
     unorm = (g/k)**0.5
     umean = unorm * u
-    if verbose: print 'CALCULATED mean wave speed :',umean,'m/s'
+    if verbose:
+        print '  Mean horizontal wavespeed  :',umean,'m/s  \t== lam/T'
     
     # can quit now if we just need lambda/umean
     if not output=='':
@@ -160,10 +192,9 @@ if __name__ == '__main__':
     #print 'Volume flux under the wave:',Qnorm*(g/k**3)**0.5,'m^2/s'
 
     Ur = H/d*(lam/d)**2 #Ursell number
-    if verbose: print 'Ursell number              :',Ur,'\t\t= H*lam^2/d^3'
     
     #
-    # calculate additional quantities for plotting
+    # calculate additional quantities for plotting / info
     #
 
     x = np.linspace(0,2*lam,501)
@@ -177,11 +208,16 @@ if __name__ == '__main__':
             + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
     y = kn/k-d
     #ymin,ymax = np.min(y),np.max(y)
+
     if verbose:
-        print 'Crest height               :',( e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymax
-        print 'Trough height              :',(-e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymin
-        print 'Above undisturbed water    :',(e**2*B22 + e**4*(B42+B44))/k,'m'#,0.5*(ymax+ymin)
-        print 'Approximate max wave slope :',np.max( np.diff(y) / np.diff(x) )
+        #print ' --------------------------------'
+        print '\nOther calcs'
+        print '  Ursell number              :',Ur,'\t\t= H*lam^2/d^3'
+        print '  Crest height               :',( e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymax
+        print '  Trough height              :',(-e + e**2*B22 + e**4*(B42+B44))/k,'m'#,ymin
+        print '  Above undisturbed water    :',(e**2*B22 + e**4*(B42+B44))/k,'m'#,0.5*(ymax+ymin)
+        print '  Approximate max wave slope :',np.max( np.diff(y) / np.diff(x) )
+        print ''
 
     # estimate max local wave vertical velocity
 #     kx = k*x
@@ -201,6 +237,37 @@ if __name__ == '__main__':
 #    dydt_est = (y[1:102] - y[:101])/dx * umean
 #    print 'Max dy/dt (num estimate):',np.max(np.abs(dydt_est)),'m/s'
 
+    #
+    # calculate coefficients (e.g. for Star linear superposition wave)
+    #
+    if generate_coeffs:
+
+        # eqn 14:
+        #kn = kd + e*np.cos(k*x) \
+        #        + e**2*B22*np.cos(2*k*x) \
+        #        + e**3*B31*(np.cos(k*x) - np.cos(3*k*x)) \
+        #        + e**4*(B42*np.cos(2*k*x) + B44*np.cos(4*k*x)) \
+        #        + e**5*(-(B53+B55)*np.cos(k*x) + B53*np.cos(3*k*x) + B55*np.cos(5*k*x))
+        # at t=0, z=0 is on the mean surface line
+        coef = np.zeros((5))
+        coef[0] =  e + e**3*B31 - e**5*(B53+B55)  # cos(  k*x)
+        coef[1] =  e**2*B22 + e**4*B42            # cos(2*k*x)
+        coef[2] = -e**3*B31 + e**5*B53            # cos(3*k*x)
+        coef[3] =  e**4*B44                       # cos(4*k*x)
+        coef[4] =  e**5*B55                       # cos(5*k*x)
+
+        print 'period\tamplitude\twavelength\twavenumber'
+        print '  (s) \t   (m)   \t    (m)   \t   (1/m)  '
+        for i,co in enumerate(coef):
+            ki = (i+1)*k
+            Li = 2*np.pi/ki
+            C0,C2,C4 = evalC(ki*d)
+            e = ki*H/2
+            Ti = 1. / ( (C0 + e**2*C2 + e**4*C4)*(g*ki)**0.5/(2*np.pi) )
+            print '{}   {}   {}   {}'.format(Ti,co/ki,Li,ki)
+    #
+    # plot/save output
+    #
     if output=='': sys.exit()
     
     if output=='plot':

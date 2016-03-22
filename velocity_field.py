@@ -80,7 +80,8 @@ unorm = C0*np.sqrt(g/k)
 U = unorm*Udelta # downwave perturbation in stationary frame
 V = unorm*Vdelta # downwave perturbation in stationary frame
 
-Umag = np.sqrt( (umean+U)**2 + V**2 )
+#Umag = np.sqrt( (umean+U)**2 + V**2 )
+Umag = np.sqrt( U**2 + V**2 )
 
 Ubed = Umag[0,:]
 stdev = np.std(Ubed)
@@ -125,5 +126,6 @@ plt.colorbar(hc,ax=ax[2])
 plot_overlay(ax[2])
 ax[2].set_ylabel('|U|')
 
+fig.suptitle('Fluid velocity in moving wave frame')
 plt.show()
 

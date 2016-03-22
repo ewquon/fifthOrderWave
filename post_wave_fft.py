@@ -241,7 +241,8 @@ if makeplot:
     plt.subplot(312)
     plt.xlabel('k / k_1')
     plt.ylabel('|F{z}|^2')
-    plt.legend(loc='best')
+    try: plt.legend(loc='best',fontsize='medium')
+    except TypeError: plt.legend(loc='best')
     plt.xlim((0,6))
     #plt.ylim((0,0.01))
 
