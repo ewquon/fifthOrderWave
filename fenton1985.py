@@ -105,6 +105,9 @@ if __name__ == '__main__':
     parser.add_argument('--plot', '-p', action='store_const',
             const=True, default=False,
             help='plot wave (requires matplotlib)')
+    parser.add_argument('--norm', '-n', action='store_const',
+            const=True, default=False,
+            help='normalize plot/data by Hs')
     parser.add_argument('--save', metavar='surf.dat',
             type=str, default='',
             help='save wave surface profile to text file')
@@ -127,6 +130,10 @@ if __name__ == '__main__':
     elif args['output']: 
         output = args['output']
         verbose = False
+    if args['norm']:
+        norm = H
+    else:
+        norm = 1.0
 
     if args['coefficients']: generate_coeffs = True
     
@@ -209,6 +216,8 @@ if __name__ == '__main__':
     y = kn/k-d
     #ymin,ymax = np.min(y),np.max(y)
 
+    y /= norm
+
     if verbose:
         #print ' --------------------------------'
         print '\nOther calcs'
@@ -279,6 +288,7 @@ if __name__ == '__main__':
         #plt.plot(x,dydt,'--')
         xranges=[x[0],x[-1]]
         plt.xlim(xranges)
+        if not norm==1.0: plt.ylim((-1,1))
         plt.xlabel('x')
         plt.ylabel('free surface height')
         plt.title('lambda=%f m (k=%f 1/m):  T=%f s,  H=%f m'%(lam,k,T,H))
